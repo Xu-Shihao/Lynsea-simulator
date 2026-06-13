@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Lynsea — 30s Pitch (痛点 · 目标 · 技术)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+<style>
+  /* ===== Lynsea design tokens (design/stitch/) — shared with teaser.html/walkthrough.html ===== */
+  :root{
+    --bg:#0B0F1A; --surface:#141A29; --surface-2:#1B2336;
+    --border:#2A3346; --grid:#1F2738;
+    --text:#E6EAF2; --text-2:#98A2B8; --muted:#5F6B82;
+    --primary:#8B7CF6;            /* indigo brand */
+    --a:#22D3EE;                  /* Branch A — cyan — ALWAYS LEFT */
+    --b:#FBBF24;                  /* Branch B — amber — ALWAYS RIGHT */
+    --fork:#F472B6;               /* fork point — magenta */
+    --shared:#94A3B8;             /* shared / perturbation event — slate */
+    --pos:#34D399; --neg:#FB7185;
+    --font-d:"Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+    --font-b:"Inter", ui-sans-serif, system-ui, sans-serif;
+  }
+  *{box-sizing:border-box; margin:0; padding:0}
+  html,body{height:100%}
+  body{
+    background:var(--bg);
+    background-image:linear-gradient(to right,var(--grid) 1px,transparent 1px),
+                     linear-gradient(to bottom,var(--grid) 1px,transparent 1px);
+    background-size:48px 48px;
+    color:var(--text); font-family:var(--font-b);
+    overflow:hidden; display:flex; align-items:center; justify-content:center;
+  }
+  /* ===== Fixed 1280x720 logical stage, scaled to fit any window ===== */
+  #stage{
+    position:relative; width:1280px; height:720px; flex:none;
+    transform-origin:center center; overflow:hidden;
+    border:1px solid var(--border); border-radius:14px; background:var(--bg);
+    background-image:linear-gradient(to right,var(--grid) 1px,transparent 1px),
+                     linear-gradient(to bottom,var(--grid) 1px,transparent 1px);
+    background-size:40px 40px;
+    box-shadow:0 30px 80px rgba(0,0,0,.55);
+    display:flex; flex-direction:column;
+  }
+  .brand{font-family:var(--font-d); font-weight:700; color:var(--primary); letter-spacing:-.02em; display:flex; align-items:center; gap:9px}
+  .brand .dot{width:15px;height:15px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#c4b9ff,var(--primary));box-shadow:0 0 12px rgba(139,124,246,.7)}
+  .ic{font-size:14px; line-height:1}
+  .anim{opacity:0; transform:translateY(10px); transition:opacity .55s ease, transform .55s ease}
+  .anim.in{opacity:1; transform:none}
+  @keyframes pulse{0%,100%{opacity:.4; transform:scale(.8)}50%{opacity:1; transform:scale(1.2)}}
+
+  /* ============ TOP BAR + beat progress ============ */
+  .topbar{height:58px; flex:none; display:flex; align-items:center; justify-content:space-between;
+    padding:0 26px; border-bottom:1px solid var(--border); background:rgba(11,15,26,.72); backdrop-filter:blur(6px); z-index:10}
+  .topbar .left{display:flex; align-items:center; gap:14px}
+  .topbar .brand{font-size:21px}
+  .topbar .eyebrow{font-size:9px; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); margin-top:3px}
+  .beats{display:flex; align-items:center; gap:8px}
+  .bchip{display:flex; align-items:center; gap:7px; font-size:12px; padding:5px 13px; border-radius:999px;
+    border:1px solid var(--border); background:var(--surface-2); color:var(--muted); transition:all .45s}
+  .bchip .bn{font-family:var(--font-d); font-weight:600}
+  .bchip .cn{color:var(--text-2)}
+  .bchip.active{border-color:var(--primary); color:#cfc6ff; box-shadow:0 0 18px rgba(139,124,246,.35); background:rgba(139,124,246,.12)}
+  .bchip.active .cn{color:#cfc6ff}
+  .bsep{width:14px; height:1px; background:var(--border)}
+
+  /* ============ BEAT STAGE ============ */
+  .beatwrap{flex:1; position:relative; min-height:0}
+  .beat{position:absolute; inset:0; opacity:0; transition:opacity .6s ease; pointer-events:none; padding:30px 56px 26px; display:flex; flex-direction:column}
+  .beat.show{opacity:1}
+  .kicker{font-family:var(--font-d); font-weight:600; font-size:12px; letter-spacing:.12em; text-transform:uppercase; display:flex; align-items:center; gap:9px; margin-bottom:10px}
+  .kicker .num{width:24px;height:24px;border-radius:7px; display:flex; align-items:center; justify-content:center; font-size:12px; border:1px solid var(--border)}
+  .headline{font-family:var(--font-d); font-weight:700; font-size:38px; line-height:1.08; letter-spacing:-.02em; max-width:980px}
+  .headline .ac{color:var(--primary)}
+  .headline .ca{color:var(--a)} .headline .cb{color:var(--b)}
+  .sub{font-size:15px; color:var(--text-2); margin-top:12px; max-width:760px; line-height:1.5}
+
+  /* ---- BEAT 1: Pain — one branch lived, the other ghosted ---- */
+  .p1k{color:var(--neg)} .p1k .num{color:var(--neg); border-color:rgba(251,113,133,.5); background:rgba(251,113,133,.1)}
+  .roadmap{flex:1; position:relative; display:flex; align-items:center; justify-content:center; margin-top:6px}
+  .road-svg{width:100%; max-width:1020px; height:280px}
+  .roadnode{font-family:var(--font-d); font-weight:600; font-size:13px; fill:var(--text)}
+  .roadlbl{font-size:13px; fill:var(--text-2)}
+  .roadlbl.ghost{fill:var(--muted)}
+  .lived-tag{font-family:var(--font-d); font-weight:600; font-size:13px; fill:var(--text)}
+  .pain-strip{display:flex; gap:14px; margin-top:2px}
+  .ptool{flex:1; border:1px solid var(--border); border-radius:11px; background:var(--surface); padding:12px 15px; display:flex; align-items:center; gap:12px; opacity:.5}
+  .ptool .pti{width:30px;height:30px;border-radius:8px; flex:none; display:flex; align-items:center; justify-content:center; font-size:16px; background:var(--surface-2); border:1px solid var(--border)}
+  .ptool .ptt{font-family:var(--font-d); font-weight:600; font-size:13px}
+  .ptool .ptd{font-size:11.5px; color:var(--muted); margin-top:1px}
+  .ptool .strike{position:relative}
+  .ptool .strike:after{content:""; position:absolute; left:-2px; right:-2px; top:52%; height:1.5px; background:var(--neg); opacity:.7; transform:scaleX(0); transform-origin:left; transition:transform .5s ease}
+  .ptool.cross .strike:after{transform:scaleX(1)}
+
+  /* ---- BEAT 2: Goal — A/B parallel-futures board ---- */
+  .p2k{color:var(--primary)} .p2k .num{color:var(--primary); border-color:rgba(139,124,246,.5); background:rgba(139,124,246,.12)}
+  .goalgrid{flex:1; display:flex; gap:26px; min-height:0; margin-top:8px}
+  .board{flex:1.5; display:flex; flex-direction:column; min-width:0}
+  .colhdr{display:flex; justify-content:space-between; margin-bottom:9px}
+  .colhdr .ch{flex:1; font-family:var(--font-d); font-weight:600; font-size:13px; display:flex; align-items:center; gap:8px}
+  .colhdr .ch.l{color:var(--a)} .colhdr .ch.r{color:var(--b); justify-content:flex-end}
+  .colhdr .dt{width:9px;height:9px;border-radius:2px}
+  .boardgrid{flex:1; display:flex; flex-direction:column; justify-content:center; gap:11px}
+  .mrow{display:flex; gap:56px; position:relative}
+  .half{flex:1; min-width:0}
+  .card{border:1px solid var(--border); border-radius:9px; padding:9px 12px; background:var(--surface)}
+  .card.a{border-left:3px solid var(--a)} .card.b{border-left:3px solid var(--b)}
+  .card h4{font-family:var(--font-d); font-weight:600; font-size:14px; margin-bottom:2px}
+  .card p{font-size:11.5px; color:var(--text-2); line-height:1.35}
+  .shared{margin:0 9%; text-align:center; border:1px dashed var(--shared); border-radius:9px;
+    padding:8px 12px; background:rgba(20,26,41,.6); position:relative}
+  .shared .stag{position:absolute; top:-9px; left:50%; transform:translateX(-50%); background:var(--surface-2); border:1px solid var(--border);
+    color:var(--shared); font-size:9px; letter-spacing:.07em; text-transform:uppercase; padding:2px 10px;
+    border-radius:999px; display:flex; align-items:center; gap:5px; white-space:nowrap}
+  .shared h4{font-family:var(--font-d); font-weight:600; font-size:12.5px}
+  .shared p{font-size:11px; color:var(--text-2); margin-top:1px}
+  .forkrow{position:relative; height:32px; display:flex; align-items:center; justify-content:center}
+  .forkline{position:absolute; top:50%; left:9%; right:9%; height:1px; background:var(--fork);
+    box-shadow:0 0 12px rgba(244,114,182,.6); transform:scaleX(0); transform-origin:center; transition:transform .7s ease}
+  .forkpill{position:relative; z-index:2; display:flex; align-items:center; gap:8px; font-size:12px; color:var(--fork);
+    font-family:var(--font-d); font-weight:600; background:var(--bg); border:1px solid rgba(244,114,182,.5);
+    border-radius:999px; padding:5px 15px; box-shadow:0 0 16px rgba(244,114,182,.25)}
+  .forkpill .fd{width:8px;height:8px;border-radius:50%;background:var(--fork); box-shadow:0 0 10px var(--fork)}
+  /* right rail: score cards + value-weighted chips */
+  .grail{flex:1; display:flex; flex-direction:column; gap:13px; min-width:0; justify-content:center}
+  .scores{display:flex; gap:13px}
+  .scard{flex:1; border:1px solid var(--border); border-radius:12px; padding:13px 15px; background:var(--surface); position:relative; overflow:hidden}
+  .scard:before{content:""; position:absolute; left:0; top:0; width:100%; height:3px}
+  .scard.a:before{background:var(--a)} .scard.b:before{background:var(--b)}
+  .scard .lbl{font-size:10.5px; letter-spacing:.05em; text-transform:uppercase; color:var(--text-2); margin-bottom:3px}
+  .scard .num{font-family:var(--font-d); font-weight:700; font-size:46px; line-height:1}
+  .scard.a .num{color:var(--a)} .scard.b .num{color:var(--b)}
+  .scard .sub{font-size:11px; color:var(--muted); margin-top:2px}
+  .pillrow{display:flex; flex-wrap:wrap; gap:8px}
+  .gp{font-size:12px; color:var(--text-2); background:rgba(139,124,246,.1); border:1px solid rgba(139,124,246,.28);
+    border-radius:8px; padding:7px 12px; display:flex; align-items:center; gap:7px}
+  .gp b{color:var(--text); font-weight:600}
+  .recmini{border:1px solid rgba(52,211,153,.3); border-left:3px solid var(--pos); border-radius:11px;
+    background:rgba(20,26,41,.6); padding:11px 14px}
+  .recmini .rt{font-family:var(--font-d); font-weight:600; font-size:14px; color:var(--text)}
+  .recmini .rt b{color:var(--b)}
+  .recmini .gd{font-size:11.5px; color:var(--text-2); margin-top:4px; display:flex; gap:6px; align-items:flex-start; line-height:1.4}
+  .recmini .gd .warn{color:var(--b)}
+
+  /* ---- BEAT 3: Tech — how it works ---- */
+  .p3k{color:var(--a)} .p3k .num{color:var(--a); border-color:rgba(34,211,238,.5); background:rgba(34,211,238,.1)}
+  .techgrid{display:grid; grid-template-columns:1fr 1fr; gap:13px; margin-top:14px}
+  .tcard{border:1px solid var(--border); border-radius:12px; background:var(--surface); padding:14px 16px; display:flex; gap:13px; align-items:flex-start}
+  .tcard .ti{width:34px;height:34px;border-radius:9px; flex:none; display:flex; align-items:center; justify-content:center; font-size:17px; background:rgba(139,124,246,.14); border:1px solid rgba(139,124,246,.3)}
+  .tcard .tt{min-width:0}
+  .tcard .tk{font-family:var(--font-d); font-weight:600; font-size:14.5px; color:var(--text); line-height:1.2}
+  .tcard .tk .mtag{font-size:10px; color:var(--primary); background:rgba(139,124,246,.16); border-radius:5px; padding:1px 6px; margin-left:6px; vertical-align:1px}
+  .tcard .td{font-size:11.5px; color:var(--text-2); line-height:1.42; margin-top:4px}
+  .tcard .td b{color:var(--text); font-weight:600}
+  .tcard .td .cy{color:var(--a)} .tcard .td .am{color:var(--b)} .tcard .td .mg{color:var(--fork)}
+  .stackrow{display:flex; align-items:center; gap:12px; margin-top:15px}
+  .stackgrp{display:flex; align-items:center; gap:8px; flex-wrap:wrap}
+  .sb{font-size:12px; padding:6px 12px; border-radius:8px; border:1px solid var(--border); background:var(--surface-2); color:var(--text); display:flex; align-items:center; gap:7px}
+  .sb .sd{width:7px;height:7px;border-radius:50%}
+  .stk-be .sd{background:var(--pos)} .stk-fe .sd{background:var(--a)}
+  .stacklbl{font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin-right:2px}
+  .buildbadge{margin-left:auto; display:flex; align-items:center; gap:9px; font-size:12.5px; color:#cfc6ff;
+    border:1px solid rgba(139,124,246,.45); background:rgba(139,124,246,.12); border-radius:999px; padding:7px 14px; box-shadow:0 0 18px rgba(139,124,246,.22)}
+  .buildbadge b{font-family:var(--font-d); font-weight:700; color:#fff}
+  .seedline{margin-top:13px; display:flex; align-items:center; gap:10px; font-size:12px; color:var(--text-2)}
+  .seedbadge{display:flex; align-items:center; gap:7px; font-size:12px; padding:5px 12px; border-radius:999px; border:1px solid rgba(34,211,238,.4); background:var(--surface-2); color:var(--a); transition:box-shadow .4s, border-color .4s}
+  .seedbadge.flash{box-shadow:0 0 18px rgba(34,211,238,.55); border-color:var(--a)}
+  .seedbadge .tick{color:var(--pos)}
+  .closetag{margin-left:auto; font-family:var(--font-d); font-weight:600; font-size:13px; color:var(--text)}
+  .closetag .ac{color:var(--primary)}
+</style>
+</head>
+<body>
+<div id="stage">
+
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="left">
+      <div class="brand"><span class="dot"></span>Lynsea</div>
+      <div><div class="eyebrow">Decision Outcome Simulator</div></div>
+    </div>
+    <div class="beats">
+      <div class="bchip" id="bc1"><span class="bn">痛点</span><span class="cn">Pain</span></div>
+      <div class="bsep"></div>
+      <div class="bchip" id="bc2"><span class="bn">目标</span><span class="cn">Goal</span></div>
+      <div class="bsep"></div>
+      <div class="bchip" id="bc3"><span class="bn">技术</span><span class="cn">Tech</span></div>
+    </div>
+  </div>
+
+  <div class="beatwrap">
+
+    <!-- ======== BEAT 1 · 痛点 / PAIN ======== -->
+    <div class="beat" id="beat-pain">
+      <div class="kicker p1k anim" id="k1"><span class="num">01</span>痛点 · The Pain</div>
+      <div class="headline anim" id="h1">A high-stakes life decision is <span class="ac">one-shot</span> — and irreversible.</div>
+      <div class="sub anim" id="s1">You only ever live <b>one</b> branch. The road you didn't take stays invisible — so today people decide on gut feel or a spreadsheet.</div>
+
+      <div class="roadmap">
+        <svg class="road-svg" viewBox="0 0 1020 280" preserveAspectRatio="xMidYMid meet">
+          <!-- decision node -->
+          <circle id="r-node" cx="150" cy="140" r="9" fill="var(--primary)" opacity="0"/>
+          <text id="r-nodelbl" class="roadnode" x="150" y="172" text-anchor="middle" opacity="0">Decision</text>
+          <!-- lived path (solid) -->
+          <path id="r-lived" d="M159,140 C360,140 470,86 700,86" fill="none" stroke="var(--text)" stroke-width="3" stroke-linecap="round"/>
+          <circle id="r-livedend" cx="700" cy="86" r="6" fill="var(--text)" opacity="0"/>
+          <text id="r-livedlbl" class="lived-tag" x="718" y="91" opacity="0">The life you live</text>
+          <!-- road not taken (ghosted, dashed) -->
+          <path id="r-ghost" d="M159,140 C360,140 470,206 700,206" fill="none" stroke="var(--muted)" stroke-width="2.5" stroke-dasharray="7 8" stroke-linecap="round" opacity="0"/>
+          <circle id="r-ghostend" cx="700" cy="206" r="5" fill="none" stroke="var(--muted)" stroke-width="2" opacity="0"/>
+          <text id="r-ghostlbl" class="roadlbl ghost" x="718" y="203" opacity="0">The road not taken —</text>
+          <text id="r-ghostlbl2" class="roadlbl ghost" x="718" y="221" opacity="0">you never get to see it.</text>
+        </svg>
+      </div>
+
+      <div class="pain-strip">
+        <div class="ptool anim" id="pt1"><div class="pti">🎲</div><div class="strike"><div class="ptt">Gut feel</div><div class="ptd">A coin-flip dressed up as a choice.</div></div></div>
+        <div class="ptool anim" id="pt2"><div class="pti">📊</div><div class="strike"><div class="ptt">A spreadsheet</div><div class="ptd">Static cells can't model people reacting over time.</div></div></div>
+      </div>
+    </div>
+
+    <!-- ======== BEAT 2 · 目标 / GOAL ======== -->
+    <div class="beat" id="beat-goal">
+      <div class="kicker p2k anim" id="k2"><span class="num">02</span>目标 · The Goal</div>
+      <div class="headline anim" id="h2">See <span class="ca">both futures</span> side-by-side — <span class="ac">before</span> you choose.</div>
+
+      <div class="goalgrid">
+        <!-- LEFT: A/B board -->
+        <div class="board">
+          <div class="colhdr anim" id="g-cols">
+            <div class="ch l"><span class="dt" style="background:var(--a)"></span>Branch A · Stay</div>
+            <div class="ch r">Branch B · Join<span class="dt" style="background:var(--b)"></span></div>
+          </div>
+          <div class="boardgrid">
+            <div class="mrow">
+              <div class="half"><div class="card a anim" id="g-m1a"><h4>Steady sprint</h4><p>Predictable hours, low surprises.</p></div></div>
+              <div class="half"><div class="card b anim" id="g-m1b"><h4>Onboarding chaos</h4><p>Messy legacy codebase; high stress.</p></div></div>
+            </div>
+            <div class="shared anim" id="g-shared">
+              <span class="stag"><span class="ic" style="font-size:9px">🔗</span>Shared event · same seed in both</span>
+              <h4>Partner receives a job offer</h4>
+              <p>Identical in both branches — only your decision differs.</p>
+            </div>
+            <div class="forkrow">
+              <div class="forkline" id="g-forkline"></div>
+              <div class="forkpill anim" id="g-forkpill"><span class="fd"></span>Paths diverge most here · month 3</div>
+            </div>
+            <div class="mrow">
+              <div class="half"><div class="card a anim" id="g-m3a"><h4>Promotion stalls</h4><p>Comfortable, but flat.</p></div></div>
+              <div class="half"><div class="card b anim" id="g-m3b"><h4>Ship the first feature</h4><p>Volatile, but rising.</p></div></div>
+            </div>
+          </div>
+        </div>
+        <!-- RIGHT: scores + value-weighting -->
+        <div class="grail">
+          <div class="scores">
+            <div class="scard a anim" id="g-sca"><div class="lbl">Branch A · Stay</div><div class="num" id="g-scoreA">0</div><div class="sub">composite</div></div>
+            <div class="scard b anim" id="g-scb"><div class="lbl">Branch B · Join</div><div class="num" id="g-scoreB">0</div><div class="sub">composite</div></div>
+          </div>
+          <div class="pillrow">
+            <div class="gp anim" id="g-p1"><span class="ic">🎲</span><b>Probabilistic</b></div>
+            <div class="gp anim" id="g-p2"><span class="ic">⚖️</span><b>Value-weighted</b></div>
+            <div class="gp anim" id="g-p3"><span class="ic">✓</span><b>Reproducible</b></div>
+          </div>
+          <div class="recmini anim" id="g-rec">
+            <div class="rt">Leans <b>B</b> — ~60% chance it scores higher <i>for you</i>.</div>
+            <div class="gd"><span class="warn">⚠</span>Guardrail: high variance — likely keep ~6 months of runway before committing.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======== BEAT 3 · 技术 / TECH ======== -->
+    <div class="beat" id="beat-tech">
+      <div class="kicker p3k anim" id="k3"><span class="num">03</span>技术 · How it works</div>
+      <div class="headline anim" id="h3" style="font-size:30px">A controlled experiment on your future — not a guess.</div>
+
+      <div class="techgrid">
+        <div class="tcard anim" id="t1"><div class="ti">🎲</div><div class="tt">
+          <div class="tk">Fixed-seed paired counterfactual<span class="mtag">M-b</span></div>
+          <div class="td">Branches differ <b>only</b> by the decision; shared random events are <b>byte-identical</b>. Reproducible <b>seed hash</b> (NFR-01) — re-runnable, testable.</div></div></div>
+        <div class="tcard anim" id="t2"><div class="ti">🧠</div><div class="tt">
+          <div class="tk">Digital-twin personas<span class="mtag">M-c</span></div>
+          <div class="td">You + your social circle as belief-driven twins (<b>UserHarness</b>, arXiv:2605.27721). <b>State-forking</b> keeps each persona consistent across both branches.</div></div></div>
+        <div class="tcard anim" id="t3"><div class="ti">⚖️</div><div class="tt">
+          <div class="tk">5-dim value-weighted scoring<span class="mtag">M-d</span></div>
+          <div class="td"><b>Economic · career · relationships · mental · autonomy</b>, weighted to <b>your</b> priorities. "Better" means better <i>for you</i>.</div></div></div>
+        <div class="tcard anim" id="t4"><div class="ti">📊</div><div class="tt">
+          <div class="tk">Credibility card</div>
+          <div class="td"><b>Data · causal · plausibility</b> scored every run. Always probabilistic, always directional — a simulation, never a prophecy.</div></div></div>
+      </div>
+
+      <div class="stackrow anim" id="t-stack">
+        <span class="stacklbl">Stack</span>
+        <div class="stackgrp">
+          <span class="sb stk-be"><span class="sd"></span>FastAPI</span>
+          <span class="sb stk-be"><span class="sd"></span>Claude API</span>
+          <span class="sb stk-be"><span class="sd"></span>SSE streaming</span>
+          <span class="sb stk-fe"><span class="sd"></span>Next.js</span>
+          <span class="sb stk-fe"><span class="sd"></span>Recharts</span>
+        </div>
+        <div class="buildbadge"><span class="ic">⚡</span><b>9-agent</b> parallel build on Multica</div>
+      </div>
+
+      <div class="seedline anim" id="t-seed">
+        <span class="seedbadge" id="seedbadge"><span class="tick">✓</span><span id="seedtxt">seed-locked · reproducible</span></span>
+        <span>Same decision + same seed → byte-identical shared world, every time.</span>
+        <span class="closetag">See your futures <span class="ac">before</span> you choose.</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  const stage=document.getElementById('stage');
+  const $=id=>document.getElementById(id);
+  function fit(){ const s=Math.min(window.innerWidth/1280, window.innerHeight/720)*0.985; stage.style.transform='scale('+s+')'; }
+  window.addEventListener('resize', fit); fit();
+
+  /* ---- loop-safe tween helpers (gen-guarded) ---- */
+  let gen=0;
+  const LOOP=30.0;
+  function countUp(el,to,dur){ const g=gen,t0=performance.now();
+    (function f(n){ if(g!==gen)return; const p=Math.min(1,(n-t0)/dur),e=1-Math.pow(1-p,3);
+      el.textContent=Math.round(to*e); if(p<1)requestAnimationFrame(f); })(performance.now()); }
+  function fade(el,to,dur,delay){ const g=gen,t0=performance.now()+(delay||0);
+    (function f(n){ if(g!==gen)return; if(n<t0){requestAnimationFrame(f);return;} const p=Math.min(1,(n-t0)/dur);
+      el.setAttribute('opacity', to*p); if(p<1)requestAnimationFrame(f); })(performance.now()); }
+  function drawPath(el,dur,delay){ const len=el.getTotalLength(); el.style.strokeDasharray=el._dash||len;
+    const g=gen,t0=performance.now()+(delay||0);
+    (function f(n){ if(g!==gen)return; if(n<t0){requestAnimationFrame(f);return;} const p=Math.min(1,(n-t0)/dur);
+      el.style.strokeDashoffset=len*(1-p); if(p<1)requestAnimationFrame(f); })(performance.now()); }
+
+  /* lived/ghost paths use dash-offset reveal (preserve dashes for ghost) */
+  const livedPath=$('r-lived'); const ghostPath=$('r-ghost');
+  (function setup(){ const ll=livedPath.getTotalLength(); livedPath.style.strokeDasharray=ll; livedPath.style.strokeDashoffset=ll;
+    ghostPath._dash='7 8'; })();
+  function drawLived(dur,delay){ const len=livedPath.getTotalLength(); const g=gen,t0=performance.now()+(delay||0);
+    (function f(n){ if(g!==gen)return; if(n<t0){requestAnimationFrame(f);return;} const p=Math.min(1,(n-t0)/dur);
+      livedPath.style.strokeDashoffset=len*(1-p); if(p<1)requestAnimationFrame(f); })(performance.now()); }
+
+  /* ---- choreography over 30s; three 10s beats cross-fade ---- */
+  const steps=[
+    // ===== BEAT 1 · PAIN (0–10s) =====
+    {at:0.20, fn:()=>{ $('beat-pain').classList.add('show'); $('bc1').classList.add('active'); }},
+    {at:0.40, fn:()=>{ $('k1').classList.add('in'); $('h1').classList.add('in'); }},
+    {at:1.20, fn:()=>{ $('s1').classList.add('in'); }},
+    {at:1.80, fn:()=>{ fade($('r-node'),1,500); fade($('r-nodelbl'),1,500,200); }},
+    {at:2.40, fn:()=>{ drawLived(1300); }},
+    {at:3.60, fn:()=>{ fade($('r-livedend'),1,400); fade($('r-livedlbl'),1,500,100); }},
+    {at:4.40, fn:()=>{ fade(ghostPath,1,1100); }},
+    {at:5.40, fn:()=>{ fade($('r-ghostend'),1,500); fade($('r-ghostlbl'),1,500,100); fade($('r-ghostlbl2'),1,500,250); }},
+    {at:6.60, fn:()=>{ $('pt1').classList.add('in'); }},
+    {at:7.00, fn:()=>{ $('pt2').classList.add('in'); }},
+    {at:8.00, fn:()=>{ $('pt1').classList.add('cross'); }},
+    {at:8.40, fn:()=>{ $('pt2').classList.add('cross'); }},
+
+    // ===== BEAT 2 · GOAL (10–20s) =====
+    {at:9.70, fn:()=>{ $('beat-pain').classList.remove('show'); }},
+    {at:10.00,fn:()=>{ $('beat-goal').classList.add('show'); $('bc1').classList.remove('active'); $('bc2').classList.add('active'); }},
+    {at:10.30,fn:()=>{ $('k2').classList.add('in'); $('h2').classList.add('in'); }},
+    {at:11.00,fn:()=>{ $('g-cols').classList.add('in'); }},
+    {at:11.40,fn:()=>{ $('g-m1a').classList.add('in'); }},
+    {at:11.70,fn:()=>{ $('g-m1b').classList.add('in'); }},
+    {at:12.30,fn:()=>{ $('g-shared').classList.add('in'); }},
+    {at:12.90,fn:()=>{ $('g-forkline').style.transform='scaleX(1)'; }},
+    {at:13.20,fn:()=>{ $('g-forkpill').classList.add('in'); }},
+    {at:13.70,fn:()=>{ $('g-m3a').classList.add('in'); }},
+    {at:14.00,fn:()=>{ $('g-m3b').classList.add('in'); }},
+    {at:14.40,fn:()=>{ $('g-sca').classList.add('in'); $('g-scb').classList.add('in'); }},
+    {at:14.70,fn:()=>{ countUp($('g-scoreA'),61,1500); countUp($('g-scoreB'),67,1700); }},
+    {at:15.60,fn:()=>{ $('g-p1').classList.add('in'); }},
+    {at:15.85,fn:()=>{ $('g-p2').classList.add('in'); }},
+    {at:16.10,fn:()=>{ $('g-p3').classList.add('in'); }},
+    {at:16.90,fn:()=>{ $('g-rec').classList.add('in'); }},
+
+    // ===== BEAT 3 · TECH (20–30s) =====
+    {at:19.70,fn:()=>{ $('beat-goal').classList.remove('show'); }},
+    {at:20.00,fn:()=>{ $('beat-tech').classList.add('show'); $('bc2').classList.remove('active'); $('bc3').classList.add('active'); }},
+    {at:20.30,fn:()=>{ $('k3').classList.add('in'); $('h3').classList.add('in'); }},
+    {at:21.00,fn:()=>{ $('t1').classList.add('in'); }},
+    {at:21.30,fn:()=>{ $('t2').classList.add('in'); }},
+    {at:21.60,fn:()=>{ $('t3').classList.add('in'); }},
+    {at:21.90,fn:()=>{ $('t4').classList.add('in'); }},
+    {at:23.40,fn:()=>{ $('t-stack').classList.add('in'); }},
+    {at:24.80,fn:()=>{ $('t-seed').classList.add('in'); }},
+    {at:25.80,fn:()=>{ $('seedbadge').classList.add('flash'); $('seedtxt').textContent='seed-locked · reproducible #7f3ac1'; }},
+    {at:27.40,fn:()=>{ $('seedbadge').classList.remove('flash'); }},
+  ];
+
+  function resetAll(){
+    gen++;
+    document.querySelectorAll('.anim').forEach(el=>el.classList.remove('in'));
+    document.querySelectorAll('.beat').forEach(el=>el.classList.remove('show'));
+    document.querySelectorAll('.bchip').forEach(el=>el.classList.remove('active'));
+    document.querySelectorAll('.ptool').forEach(el=>el.classList.remove('cross'));
+    // beat 1 svg
+    ['r-node','r-nodelbl','r-livedend','r-livedlbl','r-ghost','r-ghostend','r-ghostlbl','r-ghostlbl2'].forEach(i=>$(i).setAttribute('opacity',0));
+    const ll=livedPath.getTotalLength(); livedPath.style.strokeDashoffset=ll;
+    // beat 2
+    $('g-forkline').style.transform='scaleX(0)';
+    $('g-scoreA').textContent='0'; $('g-scoreB').textContent='0';
+    // beat 3
+    $('seedbadge').classList.remove('flash'); $('seedtxt').textContent='seed-locked · reproducible';
+  }
+
+  /* ---- master clock ---- */
+  let fired=new Array(steps.length).fill(false);
+  let startTs=null;
+  function tick(ts){ if(startTs===null)startTs=ts; const t=(ts-startTs)/1000;
+    for(let i=0;i<steps.length;i++){ if(!fired[i]&&t>=steps[i].at){ fired[i]=true; try{steps[i].fn();}catch(e){} } }
+    if(t>=LOOP){ startTs=ts; fired.fill(false); resetAll(); }
+    requestAnimationFrame(tick); }
+  requestAnimationFrame(tick);
+</script>
+</body>
+</html>

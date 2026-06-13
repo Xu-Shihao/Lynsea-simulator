@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Lynsea — 15-Second Teaser</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+<style>
+  /* ===== Lynsea design tokens (docs/design/README.md) — shared with walkthrough.html ===== */
+  :root{
+    --bg:#0B0F1A; --surface:#141A29; --surface-2:#1B2336;
+    --border:#2A3346; --grid:#1F2738;
+    --text:#E6EAF2; --text-2:#98A2B8; --muted:#5F6B82;
+    --primary:#8B7CF6;            /* indigo brand */
+    --a:#22D3EE;                  /* Branch A — cyan — ALWAYS LEFT */
+    --b:#FBBF24;                  /* Branch B — amber — ALWAYS RIGHT */
+    --fork:#F472B6;               /* fork point — magenta */
+    --shared:#94A3B8;             /* shared / perturbation event — slate */
+    --pos:#34D399; --neg:#FB7185;
+    --font-d:"Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+    --font-b:"Inter", ui-sans-serif, system-ui, sans-serif;
+  }
+  *{box-sizing:border-box; margin:0; padding:0}
+  html,body{height:100%}
+  body{
+    background:var(--bg);
+    background-image:linear-gradient(to right,var(--grid) 1px,transparent 1px),
+                     linear-gradient(to bottom,var(--grid) 1px,transparent 1px);
+    background-size:48px 48px;
+    color:var(--text); font-family:var(--font-b);
+    overflow:hidden; display:flex; align-items:center; justify-content:center;
+  }
+  /* ===== Fixed 1280x720 logical stage, scaled to fit any window ===== */
+  #stage{
+    position:relative; width:1280px; height:720px; flex:none;
+    transform-origin:center center; overflow:hidden;
+    border:1px solid var(--border); border-radius:14px; background:var(--bg);
+    background-image:linear-gradient(to right,var(--grid) 1px,transparent 1px),
+                     linear-gradient(to bottom,var(--grid) 1px,transparent 1px);
+    background-size:40px 40px;
+    box-shadow:0 30px 80px rgba(0,0,0,.55);
+    display:flex; flex-direction:column;
+  }
+  .brand{font-family:var(--font-d); font-weight:700; color:var(--primary); letter-spacing:-.02em; display:flex; align-items:center; gap:9px}
+  .brand .dot{width:15px;height:15px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#c4b9ff,var(--primary));box-shadow:0 0 12px rgba(139,124,246,.7)}
+  .anim{opacity:0; transform:translateY(9px); transition:opacity .55s ease, transform .55s ease}
+  .anim.in{opacity:1; transform:none}
+  .ic{font-size:14px; line-height:1}
+  @keyframes pulse{0%,100%{opacity:.4; transform:scale(.8)}50%{opacity:1; transform:scale(1.2)}}
+
+  /* ============ TOP BAR ============ */
+  .topbar{height:56px; flex:none; display:flex; align-items:center; justify-content:space-between;
+    padding:0 24px; border-bottom:1px solid var(--border); background:rgba(11,15,26,.72); backdrop-filter:blur(6px)}
+  .topbar .brand{font-size:21px}
+  .topbar .eyebrow{font-size:9px; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); margin-top:3px}
+  .topbar .left{display:flex; align-items:center; gap:14px}
+  .topbar .center{font-family:var(--font-d); font-weight:600; font-size:14px; color:var(--text);
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:560px}
+  .topbar .center .q{color:var(--text-2); font-weight:500}
+  .badge{font-size:11px; padding:5px 12px; border-radius:999px; border:1px solid var(--border);
+    background:var(--surface-2); color:var(--text-2); display:flex; align-items:center; gap:6px; white-space:nowrap; transition:all .4s}
+  .badge .tick{color:var(--pos)}
+  .badge.flash{border-color:var(--primary); color:#cfc6ff; box-shadow:0 0 18px rgba(139,124,246,.45)}
+
+  /* ============ LEGEND STRIP ============ */
+  .legend{height:40px; flex:none; display:flex; align-items:center; gap:18px; padding:0 24px;
+    border-bottom:1px solid var(--border); background:rgba(11,15,26,.4)}
+  .legend .li{display:flex; align-items:center; gap:7px; font-size:12px; color:var(--text-2)}
+  .legend .sw{width:11px;height:11px;border-radius:3px}
+  .legend .a{background:var(--a)} .legend .b{background:var(--b)}
+  .legend .fk{width:14px;height:2px;background:var(--fork); box-shadow:0 0 8px rgba(244,114,182,.7)}
+  .legend .sh{width:14px;height:0;border-top:2px dashed var(--shared)}
+  .legend .mode{margin-left:auto; font-size:11px; color:var(--muted); display:flex; gap:14px; align-items:center}
+  .legend .mode b{color:var(--text-2); font-weight:600}
+
+  /* ============ MAIN GRID ============ */
+  .main{flex:1; display:flex; min-height:0; padding:16px 20px; gap:18px}
+
+  /* ---- LEFT: parallel-futures board ---- */
+  .board{flex:1.55; display:flex; flex-direction:column; min-width:0; position:relative}
+  .personas{display:flex; flex-wrap:wrap; gap:7px; margin-bottom:12px}
+  .pchip{display:flex; align-items:center; gap:6px; font-size:11px; padding:4px 10px; border-radius:999px;
+    border:1px solid var(--border); background:var(--surface); color:var(--text-2)}
+  .pchip .pd{width:7px;height:7px;border-radius:50%}
+  .pchip .twin{background:var(--primary)} .pchip .opp{background:var(--neg)} .pchip .sup{background:var(--pos)} .pchip .neu{background:var(--shared)}
+
+  .boardgrid{flex:1; position:relative; display:flex; flex-direction:column; justify-content:center; gap:11px}
+  .colhdr{display:flex; justify-content:space-between; margin-bottom:1px}
+  .colhdr .ch{flex:1; font-family:var(--font-d); font-weight:600; font-size:12px; display:flex; align-items:center; gap:7px}
+  .colhdr .ch.l{color:var(--a)} .colhdr .ch.r{color:var(--b); justify-content:flex-end}
+  .colhdr .dt{width:8px;height:8px;border-radius:2px}
+
+  .mrow{display:flex; gap:64px; position:relative}
+  .half{flex:1; min-width:0}
+  .card{border:1px solid var(--border); border-radius:9px; padding:8px 11px; background:var(--surface); position:relative}
+  .card.a{border-left:3px solid var(--a)} .card.b{border-left:3px solid var(--b)}
+  .card h4{font-family:var(--font-d); font-weight:600; font-size:13px; margin-bottom:2px}
+  .card p{font-size:11px; color:var(--text-2); line-height:1.35}
+
+  /* dashed shared-event bridge */
+  .shared{margin:0 8%; text-align:center; border:1px dashed var(--shared); border-radius:9px;
+    padding:7px 12px; background:rgba(20,26,41,.6); position:relative}
+  .shared .stag{position:absolute; top:-9px; left:14%; background:var(--surface-2); border:1px solid var(--border);
+    color:var(--shared); font-size:8.5px; letter-spacing:.07em; text-transform:uppercase; padding:2px 9px;
+    border-radius:999px; display:flex; align-items:center; gap:5px; white-space:nowrap}
+  .shared h4{font-family:var(--font-d); font-weight:600; font-size:12px}
+  .shared p{font-size:10.5px; color:var(--text-2); margin-top:1px}
+
+  /* magenta fork spine */
+  .forkrow{position:relative; height:30px; display:flex; align-items:center; justify-content:center}
+  .forkline{position:absolute; top:50%; left:9%; right:9%; height:1px; background:var(--fork);
+    box-shadow:0 0 12px rgba(244,114,182,.6); transform:scaleX(0); transform-origin:center; transition:transform .7s ease}
+  .forkpill{position:relative; z-index:2; display:flex; align-items:center; gap:8px; font-size:11.5px; color:var(--fork);
+    font-family:var(--font-d); font-weight:600; background:var(--bg); border:1px solid rgba(244,114,182,.5);
+    border-radius:999px; padding:4px 14px; box-shadow:0 0 16px rgba(244,114,182,.25)}
+  .forkpill .fd{width:8px;height:8px;border-radius:50%;background:var(--fork); box-shadow:0 0 10px var(--fork)}
+
+  /* ---- RIGHT: results rail ---- */
+  .rail{flex:1; display:flex; flex-direction:column; gap:12px; min-width:0}
+  .scores{display:flex; gap:12px}
+  .scard{flex:1; border:1px solid var(--border); border-radius:11px; padding:11px 13px; background:var(--surface); position:relative; overflow:hidden}
+  .scard:before{content:""; position:absolute; left:0; top:0; width:100%; height:3px}
+  .scard.a:before{background:var(--a)} .scard.b:before{background:var(--b)}
+  .scard .lbl{font-size:10px; letter-spacing:.05em; text-transform:uppercase; color:var(--text-2); margin-bottom:2px}
+  .scard .num{font-family:var(--font-d); font-weight:700; font-size:38px; line-height:1}
+  .scard.a .num{color:var(--a)} .scard.b .num{color:var(--b)}
+  .scard .sub{font-size:11px; color:var(--muted); margin-top:1px}
+  .vw{font-size:10.5px; color:var(--text-2); background:rgba(139,124,246,.1); border:1px solid rgba(139,124,246,.25);
+    border-radius:7px; padding:6px 10px; display:flex; align-items:center; gap:7px}
+  .vw .ic{font-size:11px} .vw b{color:var(--text); font-weight:600}
+
+  /* compact 5-dimension sparklines */
+  .dims{border:1px solid var(--border); border-radius:11px; background:var(--surface); padding:9px 12px}
+  .dims .dh{font-size:9px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin-bottom:7px}
+  .dgrid{display:grid; grid-template-columns:1fr 1fr; gap:5px 16px}
+  .dim{display:flex; align-items:center; gap:8px}
+  .dim .dn{font-size:10.5px; color:var(--text-2); width:78px; flex:none}
+  .dim svg{flex:1; height:18px; display:block}
+  .dim .win{font-size:9px; font-weight:600; width:30px; text-align:right; flex:none}
+  .win.wa{color:var(--a)} .win.wb{color:var(--b)} .win.we{color:var(--muted)}
+
+  /* credibility gauge + recommendation */
+  .credrow{display:flex; gap:12px; flex:1; min-height:0}
+  .gauge{border:1px solid var(--border); border-radius:11px; background:var(--surface); padding:10px 12px;
+    display:flex; align-items:center; gap:13px; flex:none; width:172px}
+  .gauge svg{width:74px;height:74px; flex:none}
+  .gv{font-family:var(--font-d); font-weight:700; font-size:21px; fill:var(--text)}
+  .gx{font-size:8px; fill:var(--muted)}
+  .gmeta{min-width:0}
+  .gmeta .gt{font-size:11px; font-weight:600; color:var(--text); display:flex; align-items:center; gap:6px; margin-bottom:3px}
+  .gmeta .gs{font-size:10px; color:var(--text-2); line-height:1.5}
+  .rec{flex:1; border:1px solid rgba(52,211,153,.3); border-left:3px solid var(--pos); border-radius:11px;
+    background:rgba(20,26,41,.6); padding:10px 13px; display:flex; flex-direction:column; justify-content:center; min-width:0}
+  .rec .rt{font-family:var(--font-d); font-weight:600; font-size:13px; color:var(--text); margin-bottom:4px}
+  .rec .rt b{color:var(--b)}
+  .rec .gd{font-size:10.5px; color:var(--text-2); display:flex; align-items:flex-start; gap:6px; line-height:1.4}
+  .rec .gd .warn{color:#fbbf24}
+
+  /* ============ FEATURE TICKER (system characteristics) ============ */
+  .ticker{height:74px; flex:none; border-top:1px solid var(--border); background:rgba(11,15,26,.55);
+    display:flex; align-items:center; gap:10px; padding:0 20px}
+  .feat{flex:1; border:1px solid var(--border); border-radius:10px; background:var(--surface);
+    padding:9px 12px; display:flex; align-items:center; gap:10px; transition:all .45s; opacity:.4}
+  .feat.active{opacity:1; border-color:rgba(139,124,246,.55); box-shadow:0 0 18px rgba(139,124,246,.22); background:var(--surface-2)}
+  .feat .fi{width:26px;height:26px;border-radius:7px; flex:none; display:flex; align-items:center; justify-content:center;
+    font-size:14px; background:rgba(139,124,246,.14); border:1px solid rgba(139,124,246,.3)}
+  .feat .ft{min-width:0}
+  .feat .fk{font-family:var(--font-d); font-weight:600; font-size:11.5px; color:var(--text); line-height:1.15}
+  .feat .fd{font-size:9.5px; color:var(--text-2); line-height:1.2; margin-top:1px}
+
+  /* tagline overlay on the close */
+  .tagline{position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    background:radial-gradient(ellipse 60% 42% at center, rgba(11,15,26,.92) 0%, rgba(11,15,26,.78) 45%, rgba(11,15,26,0) 75%);
+    opacity:0; transition:opacity .6s ease; pointer-events:none; z-index:20}
+  .tagline.show{opacity:1}
+  .tagline .tg{text-align:center}
+  .tagline .tg .l{font-family:var(--font-d); font-weight:700; font-size:38px; letter-spacing:-.02em; color:var(--text)}
+  .tagline .tg .l .ac{color:var(--primary)}
+  .tagline .tg .s{font-size:14px; color:var(--text-2); margin-top:10px}
+</style>
+</head>
+<body>
+<div id="stage">
+
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="left">
+      <div class="brand"><span class="dot"></span>Lynsea</div>
+      <div>
+        <div class="eyebrow">Decision Outcome Simulator</div>
+      </div>
+      <div class="center anim" id="query"><span class="q">"Should I quit my stable job to join an early-stage startup?"</span></div>
+    </div>
+    <div class="badge anim" id="seed"><span class="tick">✓</span><span id="seedtxt">seed-locked · reproducible</span></div>
+  </div>
+
+  <!-- LEGEND -->
+  <div class="legend anim" id="legend">
+    <div class="li"><span class="sw a"></span>A = Stay · current job <b style="color:var(--muted);font-weight:400">(left)</b></div>
+    <div class="li"><span class="sw b"></span>B = Join · the startup <b style="color:var(--muted);font-weight:400">(right)</b></div>
+    <div class="li"><span class="fk"></span>fork point</div>
+    <div class="li"><span class="sh"></span>shared event</div>
+    <div class="mode"><span><b>Quick</b> · 6 months</span><span><b>2</b> paired branches</span><span><b>6</b> personas</span></div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- LEFT board -->
+    <div class="board">
+      <div class="personas">
+        <div class="pchip anim" id="pa"><span class="pd twin"></span>You · digital twin</div>
+        <div class="pchip anim" id="pb"><span class="pd opp"></span>Partner · opposed</div>
+        <div class="pchip anim" id="pc"><span class="pd opp"></span>Mother · opposed</div>
+        <div class="pchip anim" id="pd"><span class="pd neu"></span>Mentor · neutral</div>
+        <div class="pchip anim" id="pe"><span class="pd sup"></span>Best friend · supportive</div>
+        <div class="pchip anim" id="pf"><span class="pd sup"></span>Ex-colleague · supportive</div>
+      </div>
+
+      <div class="boardgrid">
+        <div class="colhdr anim" id="cols">
+          <div class="ch l"><span class="dt" style="background:var(--a)"></span>Branch A</div>
+          <div class="ch r">Branch B<span class="dt" style="background:var(--b)"></span></div>
+        </div>
+
+        <!-- M1 divergent cards -->
+        <div class="mrow">
+          <div class="half"><div class="card a anim" id="m1a">
+            <h4>Steady sprint</h4><p>Predictable hours, low surprises.</p></div></div>
+          <div class="half"><div class="card b anim" id="m1b">
+            <h4>Onboarding chaos</h4><p>Messy legacy codebase; high stress.</p></div></div>
+        </div>
+
+        <!-- shared event -->
+        <div class="shared anim" id="shared">
+          <span class="stag"><span class="ic" style="font-size:9px">🔗</span>Shared event · same seed in both</span>
+          <h4>Partner receives a job offer</h4>
+          <p>Identical in both branches — only your decision differs.</p>
+        </div>
+
+        <!-- fork spine -->
+        <div class="forkrow">
+          <div class="forkline" id="forkline"></div>
+          <div class="forkpill anim" id="forkpill"><span class="fd"></span>Paths diverge most here · month 3</div>
+        </div>
+
+        <!-- M3 divergent cards -->
+        <div class="mrow">
+          <div class="half"><div class="card a anim" id="m3a">
+            <h4>Promotion stalls</h4><p>Comfortable, but flat.</p></div></div>
+          <div class="half"><div class="card b anim" id="m3b">
+            <h4>Ship the first feature</h4><p>Volatile, but rising.</p></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT rail -->
+    <div class="rail">
+      <div class="scores">
+        <div class="scard a anim" id="sca"><div class="lbl">Branch A · Stay</div><div class="num" id="scoreA">0</div><div class="sub">composite</div></div>
+        <div class="scard b anim" id="scb"><div class="lbl">Branch B · Join</div><div class="num" id="scoreB">0</div><div class="sub">composite</div></div>
+      </div>
+      <div class="vw anim" id="vw"><span class="ic">⚖️</span>Value-weighted to your <b>Growth</b> &amp; <b>Autonomy</b> priorities</div>
+
+      <div class="dims anim" id="dims">
+        <div class="dh">Dimensional trajectories · A vs B · 6 months</div>
+        <div class="dgrid" id="dgrid"></div>
+      </div>
+
+      <div class="credrow">
+        <div class="gauge anim" id="gauge">
+          <svg viewBox="0 0 80 80">
+            <circle cx="40" cy="40" r="30" fill="none" stroke="var(--border)" stroke-width="7"/>
+            <circle id="gaugearc" cx="40" cy="40" r="30" fill="none" stroke="var(--primary)" stroke-width="7"
+                    stroke-linecap="round" transform="rotate(-90 40 40)"/>
+            <text id="gv" x="40" y="42" text-anchor="middle" class="gv">0</text>
+            <text x="40" y="55" text-anchor="middle" class="gx">/ 100</text>
+          </svg>
+          <div class="gmeta">
+            <div class="gt"><span class="ic">📊</span>Credibility</div>
+            <div class="gs">Data · Causal · Plausibility<br>Directional only.</div>
+          </div>
+        </div>
+        <div class="rec anim" id="rec">
+          <div class="rt">Leans <b>B</b> — ~60% chance it scores higher <i>for you</i></div>
+          <div class="gd"><span class="warn">⚠</span>Guardrail: high variance — likely keep ~6 months of runway before committing.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FEATURE TICKER — the system's characteristics -->
+  <div class="ticker">
+    <div class="feat" id="f1"><div class="fi">🎲</div><div class="ft"><div class="fk">Seeded paired counterfactual</div><div class="fd">Same random events both ways — a controlled experiment, not two guesses.</div></div></div>
+    <div class="feat" id="f2"><div class="fi">🧠</div><div class="ft"><div class="fk">Belief-driven personas</div><div class="fd">Conflict emerges from what people believe — never scripted.</div></div></div>
+    <div class="feat" id="f3"><div class="fi">⚖️</div><div class="ft"><div class="fk">Value-weighted scoring</div><div class="fd">"Better" means better <i>for you</i> — your priorities, weighted.</div></div></div>
+    <div class="feat" id="f4"><div class="fi">📡</div><div class="ft"><div class="fk">Streamed &amp; credibility-scored</div><div class="fd">Live over SSE — a simulation, not a prediction.</div></div></div>
+  </div>
+
+  <!-- closing tagline overlay -->
+  <div class="tagline" id="tagline"><div class="tg">
+    <div class="l">See your futures <span class="ac">before</span> you choose.</div>
+    <div class="s">Lynsea — seeded, multi-agent decision-outcome simulation.</div>
+  </div></div>
+
+</div>
+
+<script>
+  const stage=document.getElementById('stage');
+  const $=id=>document.getElementById(id);
+
+  /* ---- build the 5 compact dimension sparklines ---- */
+  const DIMS=[
+    {name:'Economic',     A:[60,58,55,53,52,50,49], B:[60,52,54,58,60,63,66], win:'A>B', wc:'wa'},
+    {name:'Career',       A:[55,56,57,57,58,58,59], B:[55,60,66,71,75,79,82], win:'B≫A', wc:'wb'},
+    {name:'Relationships',A:[62,61,60,59,58,57,56], B:[62,55,53,52,53,54,55], win:'A>B', wc:'wa'},
+    {name:'Mental health',A:[58,57,56,55,55,54,54], B:[58,49,50,53,57,60,63], win:'≈ even', wc:'we'},
+    {name:'Autonomy',     A:[50,50,49,49,48,48,47], B:[50,58,65,71,76,80,84], win:'B≫A', wc:'wb'}
+  ];
+  const pts=arr=>arr.map((v,i)=>(i*(100/(arr.length-1)))+','+(44-(v/100*40)-2)).join(' ');
+  const dgrid=$('dgrid'); const curveLines=[];
+  DIMS.forEach((d,idx)=>{
+    const row=document.createElement('div'); row.className='dim';
+    row.innerHTML='<span class="dn">'+d.name+'</span>'+
+      '<svg viewBox="0 0 100 44" preserveAspectRatio="none">'+
+      '<polyline points="'+pts(d.A)+'" fill="none" stroke="var(--a)" stroke-width="2.4" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"/>'+
+      '<polyline points="'+pts(d.B)+'" fill="none" stroke="var(--b)" stroke-width="2.4" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"/></svg>'+
+      '<span class="win '+d.wc+'">'+d.win+'</span>';
+    dgrid.appendChild(row);
+    row.querySelectorAll('polyline').forEach(pl=>{ const len=pl.getTotalLength(); pl.style.strokeDasharray=len; pl.style.strokeDashoffset=len; curveLines.push({el:pl,len:len}); });
+  });
+
+  const R=30, CIRC=2*Math.PI*R;
+  const gaugeArc=$('gaugearc');
+  gaugeArc.style.strokeDasharray=CIRC; gaugeArc.style.strokeDashoffset=CIRC;
+
+  /* ---- loop-safe tween helpers (gen-guarded) ---- */
+  let gen=0;
+  const LOOP=15.0;
+  function countUp(el,to,dur){ const g=gen,t0=performance.now();
+    (function f(n){ if(g!==gen)return; const p=Math.min(1,(n-t0)/dur),e=1-Math.pow(1-p,3);
+      el.textContent=Math.round(to*e); if(p<1)requestAnimationFrame(f); })(performance.now()); }
+  function gaugeFill(to,dur){ const g=gen,t0=performance.now();
+    (function f(n){ if(g!==gen)return; const p=Math.min(1,(n-t0)/dur),e=1-Math.pow(1-p,3);
+      gaugeArc.style.strokeDashoffset=CIRC*(1-(to/100)*e); $('gv').textContent=Math.round(to*e); if(p<1)requestAnimationFrame(f); })(performance.now()); }
+  function drawLine(line,dur,delay){ const g=gen,t0=performance.now()+(delay||0);
+    (function f(n){ if(g!==gen)return; if(n<t0){requestAnimationFrame(f);return;} const p=Math.min(1,(n-t0)/dur);
+      line.el.style.strokeDashoffset=line.len*(1-p); if(p<1)requestAnimationFrame(f); })(performance.now()); }
+
+  /* ---- choreography: a single screen builds in over ~15s ---- */
+  const steps=[
+    // 0–2s: frame + decision + world
+    {at:0.20, fn:()=>{ $('query').classList.add('in'); $('seed').classList.add('in'); }},
+    {at:0.55, fn:()=>$('legend').classList.add('in')},
+    {at:0.85, fn:()=>{ ['pa','pb','pc'].forEach(i=>$(i).classList.add('in')); }},
+    {at:1.05, fn:()=>{ ['pd','pe','pf'].forEach(i=>$(i).classList.add('in')); $('cols').classList.add('in'); }},
+
+    // 1.5–4s: parallel futures + shared event + fork
+    {at:1.50, fn:()=>$('m1a').classList.add('in')},
+    {at:1.75, fn:()=>$('m1b').classList.add('in')},
+    {at:2.30, fn:()=>$('shared').classList.add('in')},
+    {at:2.70, fn:()=>{ $('forkline').style.transform='scaleX(1)'; }},
+    {at:3.00, fn:()=>$('forkpill').classList.add('in')},
+    {at:3.40, fn:()=>$('m3a').classList.add('in')},
+    {at:3.65, fn:()=>$('m3b').classList.add('in')},
+    {at:3.40, fn:()=>$('f1').classList.add('active')},   // feature 1: paired counterfactual
+
+    // 4–7s: scores + value-weighting + dimensions
+    {at:4.20, fn:()=>{ $('sca').classList.add('in'); $('scb').classList.add('in'); }},
+    {at:4.50, fn:()=>{ countUp($('scoreA'),61,1500); countUp($('scoreB'),67,1700); }},
+    {at:4.80, fn:()=>$('vw').classList.add('in')},
+    {at:4.60, fn:()=>$('f2').classList.add('active')},   // feature 2: belief-driven personas
+    {at:5.30, fn:()=>$('dims').classList.add('in')},
+    {at:5.60, fn:()=>{ curveLines.forEach((l,k)=>drawLine(l,1400,k*90)); }},
+
+    // 7–10s: credibility + recommendation
+    {at:7.20, fn:()=>{ $('gauge').classList.add('in'); gaugeFill(62,1600); }},
+    {at:7.10, fn:()=>$('f3').classList.add('active')},   // feature 3: value-weighted scoring
+    {at:8.40, fn:()=>$('rec').classList.add('in')},
+
+    // 10–12s: live stream + reproducibility flash + final feature
+    {at:9.60, fn:()=>$('f4').classList.add('active')},   // feature 4: streamed + credibility
+    {at:10.20,fn:()=>{ $('seed').classList.add('flash'); $('seedtxt').textContent='seed-locked · reproducible #7f3ac1'; }},
+    {at:12.00,fn:()=>{ $('seed').classList.remove('flash'); }},
+
+    // 13–15s: tagline close
+    {at:13.00,fn:()=>$('tagline').classList.add('show')},
+  ];
+
+  function resetAll(){
+    gen++;
+    document.querySelectorAll('.anim').forEach(el=>el.classList.remove('in'));
+    document.querySelectorAll('.feat').forEach(el=>el.classList.remove('active'));
+    $('forkline').style.transform='scaleX(0)';
+    $('scoreA').textContent='0'; $('scoreB').textContent='0'; $('gv').textContent='0';
+    gaugeArc.style.strokeDashoffset=CIRC;
+    curveLines.forEach(l=>l.el.style.strokeDashoffset=l.len);
+    $('seed').classList.remove('flash'); $('seedtxt').textContent='seed-locked · reproducible';
+    $('tagline').classList.remove('show');
+  }
+
+  /* ---- scale the fixed stage to fit any window ---- */
+  function fit(){ const s=Math.min(window.innerWidth/1280, window.innerHeight/720)*0.985; stage.style.transform='scale('+s+')'; }
+  window.addEventListener('resize', fit); fit();
+
+  /* ---- master clock ---- */
+  let fired=new Array(steps.length).fill(false);
+  let startTs=null;
+  function tick(ts){ if(startTs===null)startTs=ts; const t=(ts-startTs)/1000;
+    for(let i=0;i<steps.length;i++){ if(!fired[i]&&t>=steps[i].at){ fired[i]=true; try{steps[i].fn();}catch(e){} } }
+    if(t>=LOOP){ startTs=ts; fired.fill(false); resetAll(); }
+    requestAnimationFrame(tick); }
+  requestAnimationFrame(tick);
+</script>
+</body>
+</html>
