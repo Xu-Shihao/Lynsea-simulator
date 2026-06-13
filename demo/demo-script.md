@@ -75,6 +75,31 @@ script:
 
 ---
 
+## 15-second teaser (`teaser.html`) — one screen, whole system
+
+A single-frame sizzle cut: the entire system on one screen, building in fast. No scene changes, no scrolling. Recording surface is [`teaser.html`](teaser.html); see [`README.md`](README.md) for the timecode map. One VO line + the persistent feature ticker carry it.
+
+```yaml
+duration: 15
+recording_surface: teaser.html
+narration: "Type one hard decision — Lynsea simulates both futures side by side, scores them to your values, and tells you the odds."
+feature_ticker:        # the four system characteristics, highlighted in turn along the bottom
+  - "Seeded paired counterfactual — same random events both ways; a controlled experiment, not two guesses."
+  - "Belief-driven personas — interpersonal conflict emerges from what people believe, never scripted."
+  - "Value-weighted scoring — 'better' means better for you; your priorities, weighted."
+  - "Streamed & credibility-scored — live over SSE; a simulation, not a prediction."
+beats:
+  - {t: "0:00–0:02", on_screen: "Decision query + seed-locked badge; A=cyan(left)/B=amber(right) legend; 6 personas stream in."}
+  - {t: "0:02–0:04", on_screen: "Parallel-futures board: divergent cards, dashed shared event, magenta fork-point spine draws."}
+  - {t: "0:04–0:07", on_screen: "Value-weighted scores count up (A 61 / B 67) + 5 dimension sparklines draw."}
+  - {t: "0:07–0:10", on_screen: "Credibility gauge fills to 62; probabilistic recommendation + guardrail."}
+  - {t: "0:10–0:12", on_screen: "seed-locked badge flashes 'reproducible #7f3ac1'."}
+  - {t: "0:12–0:15", on_screen: "Hold; tagline overlay: 'See your futures before you choose.'"}
+close_tagline: "See your futures before you choose."
+```
+
+---
+
 ## Shot list (maps every demo step to a frame of `walkthrough.html`)
 
 ```yaml

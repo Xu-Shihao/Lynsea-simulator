@@ -8,8 +8,9 @@ This folder is everything needed to produce that video:
 
 | File | What it is |
 |------|-----------|
-| **`walkthrough.html`** | A self-contained, **~88-second self-playing** animated walkthrough built from the `docs/design/` Stitch design. **This is the recording surface** — open it and screen-record one loop. |
-| **`demo-script.md`** | The video script: time-coded shot list (0:00–1:28), voice-over narration, and on-screen callouts naming the specific features, code, and functionality built. Includes a 60-second trim path. |
+| **`walkthrough.html`** | A self-contained, **~88-second self-playing** animated walkthrough built from the `docs/design/` Stitch design. **This is the main recording surface** — open it and screen-record one loop. |
+| **`teaser.html`** | A self-contained, **15-second single-screen teaser** — the whole system on one frame (parallel-futures board + scores + credibility + recommendation + a 4-feature ticker) that builds in fast. Use it as a sizzle/intro clip or social cut. No scrolling, no scene changes — one screen. |
+| **`demo-script.md`** | The video script: time-coded shot list (0:00–1:28), voice-over narration, and on-screen callouts naming the specific features, code, and functionality built. Includes a 60-second trim path and the 15-second teaser beat block. |
 | **`record.mjs`** | Optional Playwright capture script — drives the page deterministically and writes PNG frames (and, via ffmpeg, an MP4). |
 
 ---
@@ -40,6 +41,23 @@ The animation tracks the script beats: console hook → **clarify Q&A ~0:06–0:
 | 0:50–0:56 | seed-locked "reproducible #7f3ac1" flash; `done · 63 events` |
 | 0:56–1:07 | closing follow-up types in; violet **Branch C** what-if forks from M3 |
 | 1:07–1:28 | Camera settles on the full parallel-futures frame; hold (loop replays from t=0) |
+
+---
+
+## The 15-second teaser (`teaser.html`) — one screen, whole system
+
+A separate, **single-screen** clip that introduces the system's characteristics all at once — no scene changes, no scrolling. Record it the same way: open `teaser.html` in Chrome, hard-refresh to start at `t=0`, and capture one 15-second loop. Everything is laid out on one 1280×720 frame and builds in fast.
+
+| Window | What the animation does |
+|--------|--------------------------|
+| 0:00–0:02 | Brand + decision query + seed-locked badge; A=cyan(left)/B=amber(right) legend; 6 personas |
+| 0:02–0:04 | Parallel-futures board: divergent cards, dashed "shared event", magenta **fork point** spine draws |
+| 0:04–0:07 | Value-weighted scores count up (A 61 / B 67) + 5 dimension sparklines draw |
+| 0:07–0:10 | Credibility gauge fills to 62; probabilistic **recommendation + guardrail** appear |
+| 0:10–0:12 | seed-locked badge flashes "reproducible #7f3ac1" |
+| 0:12–0:15 | Hold; closing tagline overlay: *See your futures before you choose.* |
+
+A persistent **feature ticker** along the bottom highlights the four differentiators in turn: **seeded paired counterfactual → belief-driven personas → value-weighted scoring → streamed & credibility-scored**. It loops identically from `t=0`, and like the walkthrough it is fully self-contained (no build, no backend).
 
 ---
 
