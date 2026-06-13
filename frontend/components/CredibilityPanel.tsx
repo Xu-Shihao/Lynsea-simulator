@@ -13,7 +13,8 @@ export function CredibilityPanel({ card }: { card: CredibilityCard }) {
             How much to trust this
           </h2>
           <p className="text-xs text-[var(--muted)] mt-0.5">
-            A self-assessed confidence read — not a measure of what will happen.
+            A self-assessed confidence read — not a guarantee of any single
+            outcome.
           </p>
         </div>
         <div className="text-right">

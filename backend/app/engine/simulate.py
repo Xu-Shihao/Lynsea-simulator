@@ -12,11 +12,17 @@ downgraded to a flagged placeholder. The rejection rate feeds event_plausibility
 from __future__ import annotations
 
 import random
-from typing import Dict, List, Optional, Tuple
+from typing import Callable, Dict, List, Optional, Tuple
 
 from .. import config
 from ..contracts import Persona, TimelineEvent
 from .common import horizon_for_mode
+
+# Callback invoked with each TimelineEvent the moment it is ready, so the
+# orchestrator can stream skeleton events for a branch BEFORE the full branch
+# (perturbation merge, sorting, return) is done (BE-04 / FE-21). Must never
+# raise — generation continues regardless of what the callback does.
+EarlyEmitFn = Callable[[TimelineEvent], None]
 
 # Keywords that signal implausible / out-of-bounds events (ALG-31).
 _IMPLAUSIBLE_KEYWORDS = (
@@ -315,12 +321,19 @@ def generate_branch_events(
     mode: str,
     stats: _GenStats,
     extra_proposals: Optional[List[Dict[str, object]]] = None,
+    early_emit: Optional[EarlyEmitFn] = None,
 ) -> List[TimelineEvent]:
     """Generate the full event list for one branch.
 
     Skeleton + perturbation events (LLM or stub) pass through the plausibility
     guard, then the shared backbone is merged in. `extra_proposals` lets tests
     inject candidate events (e.g. an implausible one) into the guard.
+
+    If `early_emit` is given it is fired once per skeleton event the moment the
+    branch's decision events are finalized — BEFORE the perturbation/exogenous
+    merge and final sort — so the orchestrator can stream the skeleton for this
+    branch without waiting on the other branch (BE-04 / FE-21). Failures in the
+    callback are swallowed so generation never depends on the consumer.
     """
     horizon = horizon_for_mode(mode)
     rng = random.Random("%d:%s:%s" % (seed, branch, option_text))
@@ -335,6 +348,21 @@ def generate_branch_events(
     decision_events = _guard_and_finalize(
         proposals, branch, personas, horizon, rng, stats, id_prefix
     )
+
+    # Stream this branch's skeleton events immediately (in month order) so the
+    # client sees a side-by-side timeline as soon as THIS branch returns, even
+    # if the other branch is still generating.
+    if early_emit is not None:
+        skeletons = sorted(
+            (e for e in decision_events if e.kind == "skeleton"),
+            key=lambda e: (e.month, e.id),
+        )
+        for ev in skeletons:
+            try:
+                early_emit(ev)
+            except Exception:
+                pass
+
     backbone_events = _backbone_events_for_branch(backbone, branch, personas)
 
     all_events = decision_events + backbone_events

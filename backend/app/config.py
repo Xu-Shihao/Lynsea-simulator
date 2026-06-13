@@ -57,8 +57,38 @@ LLM_AVAILABLE: bool = bool(CLAUDE_API_KEY)
 # Per-request timeout (seconds). Bounded so a stalled call can never hang the
 # pipeline — it errors out and callers fall back to the deterministic stub.
 REQUEST_TIMEOUT: float = float(os.environ.get("LYNSEA_LLM_TIMEOUT") or 45.0)
-# Bounded SDK-level retries (we also retry once more in complete()).
-_MAX_RETRIES: int = 1
+# Bounded SDK-level retries. Set to 0 so the SDK does NOT add its own
+# (0.5s + 1s + 2s ...) backoff on top of complete()'s retry — that stacking was
+# the worst-case latency amplifier (BE-04). complete() owns the single retry.
+_MAX_RETRIES: int = 0
+# Cap on exponential backoff so 2^n can never run away (BE-04).
+_BACKOFF_CAP: float = 10.0
+
+# --- Per-phase timeout budgets (seconds) ---------------------------------
+# Each engine phase gets its own wall-clock budget. A single LLM call that
+# exceeds REQUEST_TIMEOUT already aborts; these budgets let callers bound a
+# *phase* (which may issue several calls) and fall back to the deterministic
+# stub the moment the budget is blown, rather than accumulating retries.
+PERSONA_TIMEOUT: float = float(os.environ.get("LYNSEA_PERSONA_TIMEOUT") or 25.0)
+BACKBONE_TIMEOUT: float = float(os.environ.get("LYNSEA_BACKBONE_TIMEOUT") or 5.0)
+EVENT_GEN_TIMEOUT: float = float(os.environ.get("LYNSEA_EVENT_GEN_TIMEOUT") or 30.0)
+SCORING_TIMEOUT: float = float(os.environ.get("LYNSEA_SCORING_TIMEOUT") or 20.0)
+
+# --- Whole-simulation wall-clock thresholds by mode (seconds) ------------
+# These are the "complete comparable result" strong targets from the spec
+# (§2: Quick <=90s, Medium <=10min, Heavy by-estimate). The orchestrator wraps
+# the run in asyncio.wait_for(MODE_TIMEOUT + buffer) and, past 80% of the
+# threshold, preemptively escalates remaining work to zero-retry stubs.
+MODE_TIMEOUT: dict = {
+    "quick": float(os.environ.get("LYNSEA_QUICK_TIMEOUT") or 90.0),
+    "medium": float(os.environ.get("LYNSEA_MEDIUM_TIMEOUT") or 600.0),
+    "heavy": float(os.environ.get("LYNSEA_HEAVY_TIMEOUT") or 900.0),
+}
+
+
+def mode_timeout(mode: str) -> float:
+    """Whole-simulation wall-clock budget (seconds) for a mode."""
+    return MODE_TIMEOUT.get((mode or "quick").lower(), MODE_TIMEOUT["quick"])
 
 # IMPORTANT: the Anthropic sync client is NOT safe to share across threads here —
 # concurrent use of one client from multiple worker threads corrupts requests
@@ -68,10 +98,31 @@ _MAX_RETRIES: int = 1
 _thread_local = threading.local()
 _client_init_failed = False
 
+# Process-wide "degrade to stub" switch (BE-04 / NFR-04). When set, get_client()
+# returns None so every LLM-bearing call falls back to the deterministic stub.
+# The orchestrator sets this to preemptively shed load once a simulation has
+# burned most of its wall-clock budget, preventing uncontrolled accumulation
+# under API throttle. It is cleared at the start of each run.
+_force_stub = threading.Event()
+
+
+def set_force_stub(on: bool) -> None:
+    """Force (or release) the stub fallback for all subsequent LLM calls."""
+    if on:
+        _force_stub.set()
+    else:
+        _force_stub.clear()
+
+
+def force_stub_active() -> bool:
+    return _force_stub.is_set()
+
 
 def get_client() -> Any:
     """Return a thread-local Anthropic client, or None if no key / SDK unavailable."""
     global _client_init_failed
+    if _force_stub.is_set():
+        return None
     existing = getattr(_thread_local, "client", None)
     if existing is not None:
         return existing
@@ -100,12 +151,15 @@ def complete(
     model: Optional[str] = None,
     max_tokens: int = 1500,
     temperature: float = 0.7,
-    retries: int = 2,
+    retries: int = 1,
 ) -> Optional[str]:
     """Call Claude and return the text output, or None on failure.
 
     Never raises and never logs the API key. Callers should treat None as
     "LLM unavailable" and fall back to a deterministic generator.
+
+    `retries` defaults to 1 (one extra attempt = a single ~1.5s backoff at
+    most). Backoff is capped at _BACKOFF_CAP so it can never run away (BE-04).
     """
     client = get_client()
     if client is None:
@@ -132,7 +186,7 @@ def complete(
             last_err_name = type(exc).__name__
             if attempt < retries:
                 time.sleep(backoff)
-                backoff *= 2
+                backoff = min(backoff * 2, _BACKOFF_CAP)
     logger.warning("Claude call failed after %d retries (%s).", retries, last_err_name)
     return None
 
@@ -169,7 +223,7 @@ def complete_json(
     model: Optional[str] = None,
     max_tokens: int = 1500,
     temperature: float = 0.7,
-    retries: int = 2,
+    retries: int = 1,
 ) -> Optional[Any]:
     """Convenience: complete() then extract_json(). Returns None on any failure."""
     return extract_json(

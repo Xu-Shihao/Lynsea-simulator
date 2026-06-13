@@ -7,7 +7,7 @@ SimResult, and any error message. Each record's queue is an asyncio.Queue of
 from __future__ import annotations
 
 import asyncio
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from ..contracts import SimResult
 
@@ -22,6 +22,11 @@ class SimRecord:
         self.error: Optional[str] = None
         # Buffer of all emitted events so late SSE subscribers can replay.
         self.history: List[Tuple[str, dict]] = []
+        # Cooperative cancel handle + the background task, set by the API layer
+        # so a /cancel request can signal and (best-effort) cancel the run.
+        self.cancel_token: Optional[Any] = None
+        self.task: Optional["asyncio.Task[Any]"] = None
+        self.cancelled: bool = False
 
     async def emit(self, event_type: str, payload: dict) -> None:
         """Push an event onto the queue and into the replay buffer."""

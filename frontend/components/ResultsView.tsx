@@ -7,6 +7,7 @@ import type { SimResult, TimelineEvent } from "../lib/types";
 import { useSimStream } from "../lib/useSimStream";
 import { BranchPoints } from "./BranchPoints";
 import { Header } from "./Brand";
+import { ClarificationSummary } from "./ClarificationSummary";
 import { CredibilityPanel } from "./CredibilityPanel";
 import { EventDetail } from "./EventDetail";
 import { MetricCharts } from "./MetricCharts";
@@ -76,6 +77,17 @@ export function ResultsView({
           <StreamProgress status={sim.status} done={sim.done} />
         )}
 
+        {/* Clarification summary — what Lynsea understood, for confirmation.
+            Shown once the clarify phase has reported the decision/options. */}
+        {!sim.error && sim.status && (sim.decision || sim.options) && (
+          <ClarificationSummary
+            decision={sim.decision}
+            options={options}
+            personas={sim.personas}
+            constraints={sim.credibility?.notes}
+          />
+        )}
+
         {/* Error + retry */}
         {sim.error && (
           <div
@@ -107,8 +119,8 @@ export function ResultsView({
         {/* Empty state while waiting for first events */}
         {!sim.error && !hasAnyData && !sim.done && (
           <div className="card p-8 text-center text-sm text-[var(--muted)]">
-            Spinning up two parallel futures… the first milestones will appear
-            here in a moment.
+            Spinning up two parallel futures… expect the first milestones to
+            appear shortly.
           </div>
         )}
 
