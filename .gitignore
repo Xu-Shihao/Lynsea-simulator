@@ -8,6 +8,11 @@
 # --- agent scratch worktrees (parallel build) ---
 _work/
 
+# --- Multica agent runtime artifacts written into a bound local_directory ---
+.multica/
+.agent_context/
+CLAUDE.md
+
 # --- python (backend/) ---
 __pycache__/
 *.py[cod]
