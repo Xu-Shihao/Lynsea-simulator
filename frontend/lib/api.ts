@@ -17,6 +17,24 @@ export const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8000";
 
 /**
+ * fetch() wrapper that turns a network-level failure (backend offline, wrong
+ * port, CORS blocked) — which surfaces as a bare `TypeError: Failed to fetch` —
+ * into an actionable message instead of a cryptic one.
+ */
+async function apiFetch(path: string, init?: RequestInit): Promise<Response> {
+  try {
+    return await fetch(`${API_BASE}${path}`, init);
+  } catch {
+    throw new Error(
+      `Can't reach the Lynsea backend at ${API_BASE}. Is it running? ` +
+        `Start it with:  cd backend && .venv/bin/uvicorn app.main:app --port 8000  ` +
+        `(or run ./demo.sh from the repo root). You can also click "Load demo" to ` +
+        `explore a sample result offline.`,
+    );
+  }
+}
+
+/**
  * Create a simulation. Returns the sim_id.
  * Validates that exactly 2 options are provided (FROZEN contract).
  */
@@ -26,7 +44,7 @@ export async function createSimulation(
   if (!req.options || req.options.length !== 2) {
     throw new Error("Exactly 2 options are required.");
   }
-  const res = await fetch(`${API_BASE}/api/simulate`, {
+  const res = await apiFetch(`/api/simulate`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(req),
@@ -46,7 +64,7 @@ export async function createSimulation(
  * `error` event on the open SSE stream, which the UI surfaces gracefully.
  */
 export async function cancelSimulation(simId: string): Promise<void> {
-  const res = await fetch(`${API_BASE}/api/simulate/${simId}/cancel`, {
+  const res = await apiFetch(`/api/simulate/${simId}/cancel`, {
     method: "POST",
   });
   if (!res.ok) {
@@ -59,7 +77,7 @@ export async function cancelSimulation(simId: string): Promise<void> {
 
 /** Fetch a complete, already-finished simulation (used for reload). */
 export async function fetchSimulation(simId: string): Promise<SimResult> {
-  const res = await fetch(`${API_BASE}/api/simulate/${simId}`);
+  const res = await apiFetch(`/api/simulate/${simId}`);
   if (!res.ok) {
     const detail = await safeText(res);
     throw new Error(
