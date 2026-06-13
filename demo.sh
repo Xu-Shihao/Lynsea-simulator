@@ -313,9 +313,18 @@ def e2e_1():
                    {"A", "B"}.issubset(branches)))
 
     metric_pts = (full or {}).get("metrics", []) or by.get("metric", [])
-    dims = ["economic", "career", "relationship", "mental", "autonomy"]
-    has_5 = bool(metric_pts) and all(d in metric_pts[0] for d in dims)
-    checks.append(("five metric dimensions present (%s)" % ", ".join(dims), has_5))
+    # Dynamic per-decision dimensions (4-8), generated once and shared by A/B.
+    dim_objs = (full or {}).get("dimensions") or (
+        (by.get("dimensions", [{}])[0] or {}).get("dimensions", [])
+    )
+    dim_ids = [d.get("id") for d in dim_objs]
+    has_dims = 4 <= len(dim_ids) <= 8
+    checks.append(("4-8 dynamic dimensions generated (%s)" % ", ".join(dim_ids), has_dims))
+
+    scores_cover = bool(metric_pts) and bool(dim_ids) and all(
+        set(m.get("scores", {}).keys()) == set(dim_ids) for m in metric_pts
+    )
+    checks.append(("every metric point scores all dimensions", scores_cover))
 
     every_linked = bool(metric_pts) and all(
         len(m.get("supporting_event_ids", [])) >= 1 for m in metric_pts
