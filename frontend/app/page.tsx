@@ -27,6 +27,11 @@ const MODE_BLURB: Record<SimMode, string> = {
   heavy: "Heavy mode is the most thorough simulation — and the slowest.",
 };
 
+// On the hosted GitHub Pages build there is no backend (static export only), so
+// the input runs the bundled sample result instead of calling the live API.
+// This is inlined at build time via NEXT_PUBLIC_STATIC_DEMO=1.
+const STATIC_DEMO = process.env.NEXT_PUBLIC_STATIC_DEMO === "1";
+
 export default function InputPage() {
   const router = useRouter();
   const [decision, setDecision] = useState("");
@@ -52,6 +57,11 @@ export default function InputPage() {
   }
 
   async function handleSubmit() {
+    // No backend on the hosted static demo — render the bundled sample instead.
+    if (STATIC_DEMO) {
+      loadDemo();
+      return;
+    }
     if (!canSubmit) return;
     setSubmitting(true);
     setError(null);
@@ -103,6 +113,27 @@ export default function InputPage() {
     <>
       <Header active="Console" />
       <main className="flex-grow flex flex-col items-center pt-16 pb-16 px-lg w-full max-w-4xl mx-auto relative z-10">
+        {/* Hosted static-demo notice: no live backend on GitHub Pages. */}
+        {STATIC_DEMO && (
+          <div className="w-full mb-lg rounded-lg border border-primary/30 bg-primary/10 px-4 py-3 flex items-start gap-3">
+            <Icon name="info" className="text-primary mt-0.5" />
+            <p className="font-caption text-caption text-on-surface-variant">
+              Hosted static demo — the simulation backend isn’t connected here,
+              so this page renders a full <strong>sample result</strong>. Run
+              Lynsea locally (see the{" "}
+              <a
+                href="https://github.com/Xu-Shihao/Lynsea-simulator#setup--run-both-servers-together"
+                target="_blank"
+                rel="noreferrer"
+                className="text-primary hover:underline"
+              >
+                README
+              </a>
+              ) for live simulations against your own decisions.
+            </p>
+          </div>
+        )}
+
         {/* Hero */}
         <div className="text-center mb-12 mt-10">
           <h1 className="font-display text-display text-on-surface mb-sm tracking-tight">
@@ -247,10 +278,14 @@ export default function InputPage() {
           <button
             type="button"
             onClick={handleSubmit}
-            disabled={!canSubmit}
+            disabled={STATIC_DEMO ? false : !canSubmit}
             className="bg-primary hover:bg-primary-dim text-on-primary-fixed font-title text-title font-semibold py-md px-xl rounded-lg shadow-[0_0_20px_rgba(159,146,255,0.4)] hover:shadow-[0_0_30px_rgba(159,146,255,0.6)] transition-all flex items-center gap-md group disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none focus-ring"
           >
-            {submitting ? "Starting simulation…" : "Run simulation"}
+            {STATIC_DEMO
+              ? "Explore sample result"
+              : submitting
+                ? "Starting simulation…"
+                : "Run simulation"}
             <Icon
               name="arrow_forward"
               className="group-hover:translate-x-1 transition-transform"

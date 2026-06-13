@@ -1,0 +1,60 @@
+name: Deploy frontend to GitHub Pages
+
+# Builds the Next.js frontend as a static export (demo-only, no backend) and
+# publishes it to GitHub Pages. Runs on pushes to main or the active feature
+# branch, and can be triggered manually.
+on:
+  push:
+    branches: [main, feat/claude-code-implement]
+  workflow_dispatch:
+
+# Permissions required by actions/deploy-pages.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Only one concurrent Pages deployment; cancel superseded runs.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build static export
+        env:
+          GITHUB_PAGES: "true"
+          NEXT_PUBLIC_STATIC_DEMO: "1"
+        run: npm run build
+
+      # Stop GitHub Pages' Jekyll from dropping the Next.js _next/ directory.
+      - name: Disable Jekyll
+        run: touch out/.nojekyll
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: frontend/out
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/deploy-pages@v4
+        id: deployment
