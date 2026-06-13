@@ -1,0 +1,9 @@
+# Lynsea backend — base dependencies (seeded by BE-Core).
+# Wave-2 specialists: APPEND your own module deps below this block only;
+# do not edit or reorder the lines above.
+fastapi>=0.110
+uvicorn[standard]>=0.29
+pydantic>=2.6
+pydantic-settings>=2.2
+anthropic>=0.40
+python-dotenv>=1.0
