@@ -14,9 +14,10 @@ from __future__ import annotations
 from typing import Dict, List, Optional
 
 from ..contracts import (
-    METRIC_DIMS,
+    DEFAULT_DIMENSIONS,
     BranchPoint,
     CredibilityCard,
+    Dimension,
     MetricPoint,
     Persona,
     Recommendation,
@@ -96,9 +97,19 @@ def _final_metrics(metrics: List[MetricPoint], branch: str) -> Optional[MetricPo
     return max(pts, key=lambda m: m.month)
 
 
-def _weighted_score(point: MetricPoint, weights: Dict[str, float]) -> float:
-    total_w = sum(weights.get(d, 0.0) for d in METRIC_DIMS) or 1.0
-    s = sum(getattr(point, d) * weights.get(d, 0.0) for d in METRIC_DIMS)
+def _oriented(score: float, polarity: str) -> float:
+    """Orient a 0-100 score so higher always means 'better' for aggregation."""
+    return score if polarity == "higher_is_better" else (100.0 - score)
+
+
+def _weighted_score(
+    point: MetricPoint, weights: Dict[str, float], dims: List[Dimension]
+) -> float:
+    total_w = sum(weights.get(d.id, 0.0) for d in dims) or 1.0
+    s = sum(
+        _oriented(point.scores.get(d.id, 50.0), d.polarity) * weights.get(d.id, 0.0)
+        for d in dims
+    )
     return s / total_w
 
 
@@ -118,14 +129,21 @@ def build_recommendation(
     metrics: List[MetricPoint],
     options: List[str],
     values: Optional[Dict[str, float]],
+    dimensions: Optional[List[Dimension]] = None,
 ) -> Recommendation:
-    """Value-weighted favored branch, phrased as probability (SYS-15/16)."""
-    weights = {d: 5.0 for d in METRIC_DIMS}
+    """Value-weighted favored branch, phrased as probability (SYS-15/16).
+
+    Weights default to a neutral 5 per dimension and are overridden by
+    `values.get(dim.id, 5)`. Aggregation is polarity-aware so a lower_is_better
+    dimension contributes correctly.
+    """
+    dims = list(dimensions) if dimensions else [d.model_copy() for d in DEFAULT_DIMENSIONS]
+    weights = {d.id: 5.0 for d in dims}
     if values:
-        for d in METRIC_DIMS:
-            if d in values and values[d] is not None:
+        for d in dims:
+            if d.id in values and values[d.id] is not None:
                 try:
-                    weights[d] = float(values[d])
+                    weights[d.id] = float(values[d.id])
                 except (TypeError, ValueError):
                     pass
 
@@ -140,8 +158,8 @@ def build_recommendation(
             favored_branch="tie",
         )
 
-    sa = _weighted_score(fa, weights)
-    sb = _weighted_score(fb, weights)
+    sa = _weighted_score(fa, weights, dims)
+    sb = _weighted_score(fb, weights, dims)
     diff = sa - sb
 
     if abs(diff) < 1.5:
@@ -157,10 +175,20 @@ def build_recommendation(
     phrase = _prob_phrase(diff)
 
     # SYS-16: caveat if a high-risk dimension drops sharply on the favored path.
+    # High-risk axes are the well-being/relationship dims (by id) when present;
+    # the "oriented" score is what matters so a lower_is_better risk dim is
+    # interpreted correctly.
     caveat = ""
     risk_branch_pt = fa if favored != "B" else fb
     if risk_branch_pt is not None:
-        if risk_branch_pt.mental < 38 or risk_branch_pt.relationship < 38:
+        risk_ids = {"mental", "relationship"}
+        flagged = False
+        for d in dims:
+            if d.id in risk_ids and d.id in risk_branch_pt.scores:
+                if _oriented(risk_branch_pt.scores[d.id], d.polarity) < 38:
+                    flagged = True
+                    break
+        if flagged:
             caveat = (
                 " Note: the favored path shows a sharp decline in a high-risk area "
                 "(mental well-being or relationships). This is a simulation, not a "

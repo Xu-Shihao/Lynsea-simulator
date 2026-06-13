@@ -29,6 +29,7 @@ from typing import Awaitable, Callable, Dict, List, Optional, Tuple
 
 from .. import config
 from ..contracts import (
+    Dimension,
     MetricPoint,
     Persona,
     SimRequest,
@@ -38,6 +39,7 @@ from ..contracts import (
 from . import backbone as backbone_mod
 from . import branchpoints as bp_mod
 from . import credibility as cred_mod
+from . import dimensions as dimensions_mod
 from . import personas as personas_mod
 from . import scoring as scoring_mod
 from . import simulate as sim_mod
@@ -191,6 +193,18 @@ async def _run_simulation_impl(
     })
     backbone = backbone_mod.build_backbone(req.decision, seed, mode)
 
+    # --- Phase: dimensions (generated ONCE, shared by both branches; M-c) ---
+    # Emitted BEFORE any metric so the client can lay out N dynamic curves.
+    _check_cancel(cancel_token)
+    await _safe_emit(emit, "status", {
+        "phase": "dimensions", "message": "Choosing the decision's outcome dimensions",
+        "progress": 0.35,
+    })
+    dims: List[Dimension] = await asyncio.to_thread(
+        dimensions_mod.generate_dimensions, req.decision, seed,
+    )
+    await _safe_emit(emit, "dimensions", {"dimensions": [d.model_dump() for d in dims]})
+
     # --- Phases: branchA & branchB concurrently (BE-03) ---
     await _safe_emit(emit, "status", {
         "phase": "branchA", "message": "Simulating branch A", "progress": 0.4,
@@ -282,7 +296,7 @@ async def _run_simulation_impl(
     })
 
     def _score(branch: str, option_text: str, events: List[TimelineEvent]) -> List[MetricPoint]:
-        return scoring_mod.score_branch(branch, option_text, personas, events, seed, mode)
+        return scoring_mod.score_branch(branch, option_text, personas, events, seed, mode, dims)
 
     metrics_a, metrics_b = await asyncio.gather(
         asyncio.to_thread(_score, "A", req.options[0], all_events),
@@ -294,7 +308,7 @@ async def _run_simulation_impl(
 
     # --- Branch points ---
     _check_cancel(cancel_token)
-    branch_points = bp_mod.detect_branch_points(metrics, all_events)
+    branch_points = bp_mod.detect_branch_points(metrics, all_events, dims)
     for bp in branch_points:
         await _safe_emit(emit, "branch_point", bp.model_dump())
 
@@ -305,7 +319,7 @@ async def _run_simulation_impl(
     await _safe_emit(emit, "credibility", credibility.model_dump())
 
     # --- Recommendation ---
-    recommendation = cred_mod.build_recommendation(metrics, req.options, req.values)
+    recommendation = cred_mod.build_recommendation(metrics, req.options, req.values, dims)
     await _safe_emit(emit, "recommendation", recommendation.model_dump())
 
     result = SimResult(
@@ -314,6 +328,7 @@ async def _run_simulation_impl(
         options=req.options,
         mode=mode,
         seed=seed,
+        dimensions=dims,
         personas=personas,
         events=all_events,
         metrics=metrics,

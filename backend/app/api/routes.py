@@ -1,5 +1,6 @@
 """Lynsea API endpoints (FROZEN contract).
 
+  POST   /api/clarify                  -> ClarificationPlan (refine-your-world)
   POST   /api/simulate                 -> {"sim_id": "<uuid>"} ; starts bg task
   GET    /api/simulate/{sim_id}/stream -> SSE stream of engine events
   GET    /api/simulate/{sim_id}        -> full SimResult JSON (404 if unknown)
@@ -15,14 +16,20 @@ from typing import AsyncIterator
 from fastapi import APIRouter, HTTPException
 from sse_starlette.sse import EventSourceResponse
 
-from ..contracts import SimRequest, SimResult
+from ..contracts import ClarificationPlan, ClarifyRequest, SimRequest, SimResult
+from ..engine import clarify as clarify_mod
 from ..engine import orchestrator
 from .store import STORE, SimRecord
 
 router = APIRouter(prefix="/api")
 
 # SSE event types the engine may emit, in nominal order.
+_NON_TERMINAL = {
+    "status", "persona", "dimensions", "timeline_event", "metric",
+    "branch_point", "credibility", "recommendation",
+}
 _TERMINAL = {"done", "error"}
+_ALLOWED_EVENTS = _NON_TERMINAL | _TERMINAL
 
 
 async def _run_task(sim_id: str, req: SimRequest, rec: SimRecord) -> None:
@@ -46,6 +53,20 @@ async def _run_task(sim_id: str, req: SimRequest, rec: SimRecord) -> None:
     except Exception as exc:  # orchestrator already emitted "error"
         if not rec.done:
             await rec.emit("error", {"message": "Simulation failed: %s" % type(exc).__name__})
+
+
+@router.post("/clarify")
+async def clarify(req: ClarifyRequest) -> dict:
+    """Generate (or refine) a "Refine your world" ClarificationPlan for a decision.
+
+    Body: { decision, prior?: ClarificationPlan, note?: str }. The LLM call is
+    offloaded to a worker thread and falls back to a deterministic stub when no
+    key is configured, so this endpoint always returns a valid plan.
+    """
+    plan: ClarificationPlan = await asyncio.to_thread(
+        clarify_mod.generate_clarification, req.decision, req.prior, req.note,
+    )
+    return plan.model_dump()
 
 
 @router.post("/simulate")
@@ -73,6 +94,8 @@ async def stream_simulation(sim_id: str) -> EventSourceResponse:
             while sent < len(rec.history):
                 etype, payload = rec.history[sent]
                 sent += 1
+                if etype not in _ALLOWED_EVENTS:
+                    continue
                 yield {"event": etype, "data": json.dumps(payload)}
                 if etype in _TERMINAL:
                     return

@@ -17,12 +17,47 @@ Branch = str        # "A" | "B"
 Stance = str         # "supportive" | "opposed" | "neutral" | "unknown"
 EventKind = str      # "skeleton" | "perturbation" | "exogenous"
 Mode = str           # "quick" | "medium" | "heavy"
+Polarity = str       # "higher_is_better" | "lower_is_better"
 
-# Fixed five metric dimensions (0-100).
+# Canonical default dimension ids (the original fixed five). Dimensions are now
+# generated per-decision (4-8); this set is the deterministic stub fallback.
 METRIC_DIMS = ["economic", "career", "relationship", "mental", "autonomy"]
 
 # Default value-importance weights (0-10), used for the M-d recommendation.
 DEFAULT_VALUES: Dict[str, float] = {d: 5.0 for d in METRIC_DIMS}
+
+
+class Dimension(BaseModel):
+    """A single per-decision outcome axis, scored 0-100.
+
+    `polarity` orients the score: higher_is_better => more is good (e.g. career),
+    lower_is_better => less is good (e.g. stress). The score itself is always
+    0-100; polarity is applied only when aggregating the value-weighted
+    recommendation.
+    """
+
+    id: str
+    label: str
+    description: str = ""
+    polarity: Polarity = "higher_is_better"
+
+    @field_validator("polarity")
+    @classmethod
+    def _valid_polarity(cls, v: str) -> str:
+        if v not in ("higher_is_better", "lower_is_better"):
+            return "higher_is_better"
+        return v
+
+
+# The original five dimensions, used as the deterministic stub fallback so the
+# engine never lacks a dimension set when the LLM is unavailable (Phase 1/2).
+DEFAULT_DIMENSIONS: List["Dimension"] = [
+    Dimension(id="economic", label="Economic", description="Money, income, and financial security.", polarity="higher_is_better"),
+    Dimension(id="career", label="Career", description="Professional growth and trajectory.", polarity="higher_is_better"),
+    Dimension(id="relationship", label="Relationship", description="Closeness and quality of key relationships.", polarity="higher_is_better"),
+    Dimension(id="mental", label="Mental well-being", description="Emotional health, stress, and life satisfaction.", polarity="higher_is_better"),
+    Dimension(id="autonomy", label="Autonomy", description="Independence and control over your own path.", polarity="higher_is_better"),
+]
 
 
 class Big5(BaseModel):
@@ -45,6 +80,11 @@ class Persona(BaseModel):
     key_concerns: List[str] = Field(default_factory=list)
     # ALG-04 cold-start flag: True => persona built from population defaults.
     is_default_inferred: bool = False
+    # Optional agent-simulation enrichment (multi-agent slice). Beliefs are
+    # first-person convictions; theory_of_mind maps other persona ids -> what
+    # this persona assumes about them.
+    beliefs: List[str] = Field(default_factory=list)
+    theory_of_mind: Dict[str, str] = Field(default_factory=dict)
 
 
 class TimelineEvent(BaseModel):
@@ -63,18 +103,24 @@ class TimelineEvent(BaseModel):
 class MetricPoint(BaseModel):
     branch: Branch
     month: int
-    economic: float = Field(ge=0, le=100)
-    career: float = Field(ge=0, le=100)
-    relationship: float = Field(ge=0, le=100)
-    mental: float = Field(ge=0, le=100)
-    autonomy: float = Field(ge=0, le=100)
+    # Dynamic per-decision dimension scores: dim_id -> 0-100. Keyed by every
+    # generated Dimension.id for the simulation.
+    scores: Dict[str, float] = Field(default_factory=dict)
     # ALG-40: every score links to >= 1 supporting event.
     supporting_event_ids: List[str] = Field(default_factory=list)
+
+    @field_validator("scores")
+    @classmethod
+    def _scores_in_range(cls, v: Dict[str, float]) -> Dict[str, float]:
+        for key, val in (v or {}).items():
+            if not (0.0 <= float(val) <= 100.0):
+                raise ValueError("score for %r must be within [0, 100]" % key)
+        return v
 
 
 class BranchPoint(BaseModel):
     month: int
-    metric: str
+    dimension: str  # dim_id (was the fixed `metric`)
     magnitude: float
     description: str
     cause_chain: str
@@ -92,6 +138,39 @@ class CredibilityCard(BaseModel):
 class Recommendation(BaseModel):
     text: str
     favored_branch: str  # "A" | "B" | "tie"
+
+
+# --- Clarification ("Refine your world") models ---------------------------
+class AffectedPersonHint(BaseModel):
+    """A candidate affected person the clarifier inferred from the decision."""
+
+    name: str
+    role: str = "person"
+    suggested_stance: Stance = "unknown"
+
+
+class ValuePrompt(BaseModel):
+    """A prompt nudging the user to weigh a value/dimension hint."""
+
+    dim_hint: str
+    question: str
+
+
+class ClarificationPlan(BaseModel):
+    """LLM-generated (or stubbed) refinement scaffold for a raw decision."""
+
+    suggested_options: List[str] = Field(default_factory=list)
+    affected_people: List[AffectedPersonHint] = Field(default_factory=list)
+    key_factors: List[str] = Field(default_factory=list)
+    value_prompts: List[ValuePrompt] = Field(default_factory=list)
+    constraints: List[str] = Field(default_factory=list)
+    followup_questions: List[str] = Field(default_factory=list)
+
+
+class ClarifyRequest(BaseModel):
+    decision: str
+    prior: Optional[ClarificationPlan] = None
+    note: Optional[str] = None
 
 
 class SimRequest(BaseModel):
@@ -118,6 +197,7 @@ class SimResult(BaseModel):
     options: List[str]
     mode: Mode
     seed: int
+    dimensions: List[Dimension] = Field(default_factory=list)
     personas: List[Persona] = Field(default_factory=list)
     events: List[TimelineEvent] = Field(default_factory=list)
     metrics: List[MetricPoint] = Field(default_factory=list)
