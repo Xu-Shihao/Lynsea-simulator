@@ -12,6 +12,7 @@ import json
 import logging
 import os
 import re
+import threading
 import time
 from pathlib import Path
 from typing import Any, List, Optional
@@ -53,22 +54,39 @@ CLAUDE_API_KEY: str = (os.environ.get("CLAUDE_API_KEY") or "").strip()
 DEFAULT_MODEL: str = (os.environ.get("DEFAULT_MODEL") or "").strip() or "claude-haiku-4-5-20251001"
 LLM_AVAILABLE: bool = bool(CLAUDE_API_KEY)
 
-_client: Any = None
+# Per-request timeout (seconds). Bounded so a stalled call can never hang the
+# pipeline — it errors out and callers fall back to the deterministic stub.
+REQUEST_TIMEOUT: float = float(os.environ.get("LYNSEA_LLM_TIMEOUT") or 45.0)
+# Bounded SDK-level retries (we also retry once more in complete()).
+_MAX_RETRIES: int = 1
+
+# IMPORTANT: the Anthropic sync client is NOT safe to share across threads here —
+# concurrent use of one client from multiple worker threads corrupts requests
+# (observed BadRequestError) or wedges a pooled connection. The engine runs the
+# two branches concurrently via asyncio.to_thread, so we give each thread its OWN
+# client via thread-local storage. This keeps branch parallelism (BE-03) safe.
+_thread_local = threading.local()
 _client_init_failed = False
 
 
 def get_client() -> Any:
-    """Return a cached Anthropic client, or None if no key / SDK unavailable."""
-    global _client, _client_init_failed
-    if _client is not None:
-        return _client
+    """Return a thread-local Anthropic client, or None if no key / SDK unavailable."""
+    global _client_init_failed
+    existing = getattr(_thread_local, "client", None)
+    if existing is not None:
+        return existing
     if _client_init_failed or not CLAUDE_API_KEY:
         return None
     try:
         from anthropic import Anthropic  # type: ignore
 
-        _client = Anthropic(api_key=CLAUDE_API_KEY)
-        return _client
+        client = Anthropic(
+            api_key=CLAUDE_API_KEY,
+            timeout=REQUEST_TIMEOUT,
+            max_retries=_MAX_RETRIES,
+        )
+        _thread_local.client = client
+        return client
     except Exception as exc:  # SDK missing or init error — degrade gracefully.
         _client_init_failed = True
         logger.warning("Anthropic client unavailable (%s); using stub fallback.", type(exc).__name__)
