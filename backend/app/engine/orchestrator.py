@@ -36,6 +36,7 @@ from ..contracts import (
     SimResult,
     TimelineEvent,
 )
+from . import agents as agents_mod
 from . import backbone as backbone_mod
 from . import branchpoints as bp_mod
 from . import credibility as cred_mod
@@ -227,11 +228,48 @@ async def _run_simulation_impl(
             loop.call_soon_threadsafe(skeleton_q.put_nowait, ev)
         return _early
 
+    # Mode switch (spec §7): Quick keeps the fast single-pass event generator;
+    # Medium/Heavy run the bounded multi-agent interaction loop (agents.py) so
+    # conflicts/events EMERGE from agent stances rather than one narrative call.
+    # Both paths still stream this branch's skeletons early via the same
+    # cross-thread bridge, and both merge the shared exogenous backbone
+    # IDENTICALLY so the paired counterfactual stays fair (ALG-20).
+    use_agents = mode in ("medium", "heavy")
+
+    def _gen_branch_agents(branch: str, option_text: str,
+                           early_emit: sim_mod.EarlyEmitFn) -> List[TimelineEvent]:
+        result = agents_mod.run_interaction(
+            branch=branch, option_text=option_text, decision=req.decision,
+            personas=personas, backbone=backbone, dimensions=dims, seed=seed,
+            mode=mode,
+        )
+        # Stream this branch's skeleton events immediately (month order), mirroring
+        # simulate.generate_branch_events so the streaming bridge is identical.
+        for ev in sorted(
+            (e for e in result.events if e.kind == "skeleton"),
+            key=lambda e: (e.month, e.id),
+        ):
+            try:
+                early_emit(ev)
+            except Exception:
+                pass
+        # Merge the shared exogenous backbone identically into the branch.
+        backbone_events = sim_mod._backbone_events_for_branch(backbone, branch, personas)
+        all_branch = list(result.events) + backbone_events
+        kind_rank = {"skeleton": 0, "perturbation": 1, "exogenous": 2}
+        all_branch.sort(key=lambda e: (kind_rank.get(e.kind, 3), e.month, e.id))
+        return all_branch
+
     async def _gen(branch: str, option_text: str) -> List[TimelineEvent]:
+        early_emit = _make_early_emit()
+        if use_agents:
+            return await asyncio.to_thread(
+                _gen_branch_agents, branch, option_text, early_emit,
+            )
         return await asyncio.to_thread(
             sim_mod.generate_branch_events,
             branch, option_text, req.decision, personas, backbone, seed, mode, stats,
-            None, _make_early_emit(),
+            None, early_emit,
         )
 
     task_a = asyncio.ensure_future(_gen("A", req.options[0]))
