@@ -33,7 +33,8 @@ https://github.com/Xu-Shihao/Lynsea-simulator
 
 
 Live Demo URL
-[TODO: not yet deployed — deploy frontend (e.g. Vercel) + backend (e.g. Render/Fly/Railway) and paste the URL, or run locally via ./demo.sh for judges]
+https://xu-shihao.github.io/Lynsea-simulator/
+(Static GitHub Pages demo — renders the full A/B Parallel Futures dashboard from a bundled sample result, no backend required. For live simulations against your own decision, run locally per the README.)
 
 
 Link to Session Log (Optional)
