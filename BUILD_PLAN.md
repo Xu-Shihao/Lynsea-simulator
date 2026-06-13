@@ -161,9 +161,16 @@ npm run dev                                     # http://localhost:3000
 - Code must actually run. Prefer graceful degradation over crashes.
 
 ## 8. Build Status (controller updates each loop iteration)
-- [x] Branch `feat/lynsea-mvp`, scaffold, contract, config.py, contracts.py
-- [ ] Backend engine + API + SSE + tests (Agent BACKEND)
-- [ ] Frontend app + realtime UI (Agent FRONTEND)
-- [ ] Integration: end-to-end run, both servers, live SSE
-- [ ] P0 acceptance pass (SYS-11/12/15/17, ALG-20/30/40, BE-03/04, FE-10/12/21, NFR-01)
-- [ ] README (English) + demo script
+- [x] Branch `feat/claude-code-implement`, scaffold, contract, config.py, contracts.py
+- [x] Backend engine + API + SSE + tests — 14/14 pytest green (stub path, no live key)
+- [x] Frontend app + realtime UI — reskinned to the Stitch design (Console + Parallel Futures Dashboard); `npm run build` green
+- [x] Integration: end-to-end run, both servers, live SSE — live quick sim streams skeleton-first @12.4s, completes with full structure
+- [x] P0 acceptance pass — all 4 P0 E2E scenarios pass (E2E-1/2/5/6); covers SYS-12/15/16, ALG-04/20/40, BE-04, FE-23/24, NFR-01
+- [x] README (English) + demo script (`demo.sh`)
+
+### Verified (this build)
+- **Live-path hang fixed**: thread-local Anthropic clients + bounded 45s timeout (concurrent shared-client race + 600s read timeout was the cause).
+- **BE-04 streaming**: skeletons stream as each branch finalizes (first skeleton ~12s quick), ordered before perturbation/exogenous.
+- **NFR-02/SYS-02**: per-phase + per-mode timeout budgets, preemptive stub escalation past 80% budget, root `asyncio.wait_for` + cancel endpoint. (Full-result latency can approach the 100s cap under API throttle; clean single-sim load is ~15–25s.)
+- **ALG-20/NFR-01**: shared exogenous backbone byte-identical across same-seed runs and across branches.
+- **Design**: Stitch designs integrated faithfully (navy grid, A=cyan/B=amber/fork=magenta, Space Grotesk/Inter); offline "Load demo" renders the full dashboard from a fixture.
