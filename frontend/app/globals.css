@@ -204,9 +204,15 @@
 }
 
 /* Note: the `--spacing-*` tokens in `@theme` above feed Tailwind v4's entire
-   dynamic spacing scale, so `p-lg`, `px-xl`, `gap-md`, `w-sm`, `space-y-md`,
-   `ml-xl`, etc. all resolve to the Stitch values automatically — no manual
-   utility layer is required. */
+   dynamic spacing scale, so `p-lg`, `px-xl`, `gap-md`, `space-y-md`, `ml-xl`,
+   etc. all resolve to the Stitch values automatically — no manual utility layer
+   is required.
+
+   GOTCHA: because the spacing keys are named xs/sm/md/lg/xl, they SHADOW the
+   same-named container max-widths — `max-w-sm` becomes 8px and `max-w-xl`
+   becomes 40px instead of 24rem/36rem. Do NOT use `max-w-{xs,sm,md,lg,xl}` /
+   `min-w-*` / `w-{sm..xl}` for real widths — use arbitrary values like
+   `max-w-[24rem]`. The `2xl`–`7xl` container sizes are unaffected. */
 
 html {
   scroll-behavior: smooth;

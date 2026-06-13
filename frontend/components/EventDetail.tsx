@@ -71,7 +71,7 @@ export function EventDetail({
         onClick={onClose}
         className="absolute inset-0 bg-black/50 backdrop-blur-[2px]"
       />
-      <aside className="relative h-full w-full max-w-md bg-surface-container border-l border-surface-variant shadow-2xl overflow-y-auto animate-in">
+      <aside className="relative h-full w-full max-w-[28rem] bg-surface-container border-l border-surface-variant shadow-2xl overflow-y-auto animate-in">
         <div className="sticky top-0 bg-surface-container border-b border-surface-variant px-5 py-3 flex items-start gap-3 z-10">
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1 flex-wrap">

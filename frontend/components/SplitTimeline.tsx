@@ -89,7 +89,7 @@ export function SplitTimeline({
                 <div className="w-full relative mb-8 py-md">
                   <div className="absolute top-1/2 left-1/4 right-1/4 h-[1px] bg-brand-magenta z-0 glow-magenta" />
                   <div className="flex justify-center relative z-10">
-                    <div className="bg-surface-container-high border border-brand-magenta rounded-full px-4 py-2 flex items-center gap-sm glow-magenta max-w-xl text-center">
+                    <div className="bg-surface-container-high border border-brand-magenta rounded-full px-5 py-2.5 flex items-center gap-sm glow-magenta max-w-[36rem] text-center">
                       <span
                         className="w-3 h-3 rounded-full bg-brand-magenta animate-pulse shrink-0"
                         aria-hidden
@@ -112,7 +112,7 @@ export function SplitTimeline({
                     type="button"
                     onClick={() => onSelect(e)}
                     aria-pressed={selectedId === e.id}
-                    className={`bg-surface-container border border-dashed rounded-lg p-md w-full max-w-xl text-center relative z-10 shadow-[0_0_20px_rgba(0,0,0,0.5)] transition focus-ring ${
+                    className={`bg-surface-container border border-dashed rounded-lg p-md w-full max-w-[36rem] text-center relative z-10 shadow-[0_0_20px_rgba(0,0,0,0.5)] transition focus-ring ${
                       selectedId === e.id
                         ? "border-on-surface-variant ring-1 ring-on-surface-variant"
                         : "border-outline hover:border-on-surface-variant"
@@ -204,7 +204,7 @@ function BranchCard({
       type="button"
       onClick={() => onSelect(event)}
       aria-pressed={selected}
-      className={`bg-surface-container rounded-lg p-md w-full max-w-sm relative text-left transition animate-in focus-ring ${glow} ${
+      className={`bg-surface-container rounded-lg p-md w-full max-w-[24rem] relative text-left transition animate-in focus-ring ${glow} ${
         selected ? "ring-2" : "hover:brightness-110"
       }`}
       style={{
