@@ -14,15 +14,24 @@ export function RecommendationCard({
   recommendation,
   options,
   highRisk = false,
+  weightedFavored,
 }: {
   recommendation: Recommendation;
   options: [string, string];
   highRisk?: boolean;
+  /** Client-side, value-weighted favored branch from the results-page sliders. */
+  weightedFavored?: "A" | "B" | "tie" | null;
 }) {
   const fav = recommendation.favored_branch;
   const isTie = fav === "tie";
   const color = isTie ? "var(--primary)" : BRANCH_COLORS[fav];
   const icon = isTie ? "balance" : "trending_up";
+
+  // Surface a divergence note when the user's re-weighting flips the verdict.
+  const flipped =
+    weightedFavored != null &&
+    weightedFavored !== "tie" &&
+    weightedFavored !== fav;
 
   return (
     <div>
@@ -40,6 +49,17 @@ export function RecommendationCard({
             </>
           )}
         </span>
+        {flipped && (
+          <span
+            className="font-label text-[10px] rounded-full px-2 py-0.5"
+            style={{
+              color: BRANCH_COLORS[weightedFavored],
+              background: `${BRANCH_COLORS[weightedFavored]}1f`,
+            }}
+          >
+            Your priorities favor {weightedFavored}
+          </span>
+        )}
       </div>
       <p className="font-caption text-caption text-on-surface-variant leading-relaxed max-w-2xl">
         {recommendation.text}

@@ -2,23 +2,21 @@
 
 import { finalDeltas } from "../lib/simSelectors";
 import { BRANCH_COLORS } from "../lib/theme";
-import {
-  METRIC_LABELS,
-  type BranchPoint,
-  type MetricKey,
-  type MetricPoint,
-} from "../lib/types";
+import type { BranchPoint, Dimension, MetricPoint } from "../lib/types";
 
 export function BranchPoints({
   branchPoints,
   metrics,
+  dimensions,
   options,
 }: {
   branchPoints: BranchPoint[];
   metrics: MetricPoint[];
+  dimensions: Dimension[];
   options: [string, string];
 }) {
-  const deltas = finalDeltas(metrics);
+  const deltas = finalDeltas(metrics, dimensions);
+  const dimById = new Map(dimensions.map((d) => [d.id, d]));
 
   if (!branchPoints.length && !deltas.length) return null;
 
@@ -32,9 +30,9 @@ export function BranchPoints({
       </p>
 
       {deltas.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-5">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 mb-5">
           {deltas.map((d) => (
-            <GapTile key={d.key} metricKey={d.key} delta={d.delta} />
+            <GapTile key={d.dim.id} dim={d.dim} delta={d.delta} />
           ))}
         </div>
       )}
@@ -43,50 +41,47 @@ export function BranchPoints({
         {branchPoints
           .slice()
           .sort((a, b) => a.month - b.month)
-          .map((bp, i) => (
-            <div
-              key={i}
-              className="rounded-lg border border-surface-variant bg-surface-container-low p-3.5 border-l-2 border-l-brand-magenta"
-            >
-              <div className="flex items-center gap-2 mb-1 flex-wrap">
-                <span className="inline-flex items-center gap-1 rounded-md bg-brand-magenta/15 px-2 py-0.5 text-[11px] font-medium text-brand-magenta">
-                  Month {bp.month}
-                </span>
-                <span className="text-[11px] rounded-md bg-surface-variant px-2 py-0.5 text-on-surface-variant">
-                  {METRIC_LABELS[bp.metric as MetricKey] ?? bp.metric}
-                </span>
-                <span className="text-[11px] text-on-surface-variant">
-                  ~{Math.round(bp.magnitude)}-point gap
-                </span>
+          .map((bp, i) => {
+            const dim = dimById.get(bp.dimension);
+            return (
+              <div
+                key={i}
+                className="rounded-lg border border-surface-variant bg-surface-container-low p-3.5 border-l-2 border-l-brand-magenta"
+              >
+                <div className="flex items-center gap-2 mb-1 flex-wrap">
+                  <span className="inline-flex items-center gap-1 rounded-md bg-brand-magenta/15 px-2 py-0.5 text-[11px] font-medium text-brand-magenta">
+                    Month {bp.month}
+                  </span>
+                  <span className="text-[11px] rounded-md bg-surface-variant px-2 py-0.5 text-on-surface-variant">
+                    {dim?.label ?? bp.dimension}
+                  </span>
+                  <span className="text-[11px] text-on-surface-variant">
+                    ~{Math.round(bp.magnitude)}-point gap
+                  </span>
+                </div>
+                <p className="text-sm text-on-surface leading-relaxed">
+                  {bp.description}
+                </p>
+                <div className="mt-2 flex items-start gap-1.5 text-xs text-on-surface-variant">
+                  <span className="font-medium text-on-surface">
+                    Cause chain:
+                  </span>
+                  <span>{bp.cause_chain}</span>
+                </div>
               </div>
-              <p className="text-sm text-on-surface leading-relaxed">
-                {bp.description}
-              </p>
-              <div className="mt-2 flex items-start gap-1.5 text-xs text-on-surface-variant">
-                <span className="font-medium text-on-surface">
-                  Cause chain:
-                </span>
-                <span>{bp.cause_chain}</span>
-              </div>
-            </div>
-          ))}
+            );
+          })}
       </div>
 
       <p className="mt-3 text-[11px] text-on-surface-variant">
-        A = {options[0]} · B = {options[1]}. Gaps show A minus B at the final
-        modeled month.
+        A = {options[0]} · B = {options[1]}. Gaps show A minus B (raw score) at
+        the final modeled month.
       </p>
     </section>
   );
 }
 
-function GapTile({
-  metricKey,
-  delta,
-}: {
-  metricKey: MetricKey;
-  delta: number;
-}) {
+function GapTile({ dim, delta }: { dim: Dimension; delta: number }) {
   const rounded = Math.round(delta);
   const favorsA = rounded > 0;
   const neutral = rounded === 0;
@@ -97,15 +92,18 @@ function GapTile({
       : BRANCH_COLORS.B;
   return (
     <div className="rounded-lg border border-surface-variant bg-surface-container-low p-2.5 text-center">
-      <div className="text-[11px] text-on-surface-variant mb-0.5">
-        {METRIC_LABELS[metricKey]}
+      <div
+        className="text-[11px] text-on-surface-variant mb-0.5 truncate"
+        title={dim.description}
+      >
+        {dim.label}
       </div>
       <div className="text-lg font-semibold tabular-nums" style={{ color }}>
         {rounded > 0 ? "+" : ""}
         {rounded}
       </div>
       <div className="text-[10px] font-medium" style={{ color }}>
-        {neutral ? "even" : favorsA ? "favors A" : "favors B"}
+        {neutral ? "even" : favorsA ? "higher in A" : "higher in B"}
       </div>
     </div>
   );

@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { cancelSimulation } from "../lib/api";
-import { compositeScores, isHighRisk } from "../lib/simSelectors";
+import { favoredFromComposite, isHighRisk } from "../lib/simSelectors";
 import { BRANCH_COLORS } from "../lib/theme";
-import type { SimResult, TimelineEvent } from "../lib/types";
+import type { SimResult, TimelineEvent, ValueWeights as ValueWeightsMap } from "../lib/types";
 import { useSimStream } from "../lib/useSimStream";
 import { BranchPoints } from "./BranchPoints";
 import { Header, Icon } from "./Brand";
@@ -19,6 +19,7 @@ import { RecommendationCard } from "./RecommendationCard";
 import { SafetyBanner } from "./SafetyBanner";
 import { SplitTimeline } from "./SplitTimeline";
 import { StreamProgress } from "./StreamProgress";
+import { ValueWeights } from "./ValueWeights";
 import { WhatIfEntry } from "./WhatIfEntry";
 
 export function ResultsView({
@@ -32,12 +33,41 @@ export function ResultsView({
   const [selected, setSelected] = useState<TimelineEvent | null>(null);
   const [cancelling, setCancelling] = useState(false);
 
+  // Results-page value weights (M-d), keyed by dimension id, default neutral.
+  // Sliders re-weight the composite client-side without re-running the sim.
+  const [weightOverrides, setWeightOverrides] = useState<ValueWeightsMap>({});
+
   const options = sim.options ?? ["Option A", "Option B"];
-  const highRisk = useMemo(() => isHighRisk(sim.metrics), [sim.metrics]);
-  const scores = useMemo(
-    () => compositeScores(sim.metrics),
-    [sim.metrics],
+  const highRisk = useMemo(
+    () => isHighRisk(sim.metrics, sim.dimensions),
+    [sim.metrics, sim.dimensions],
   );
+
+  // Full weight map (default 5 per dimension, overridden by slider edits).
+  const weights = useMemo<ValueWeightsMap>(() => {
+    const w: ValueWeightsMap = {};
+    for (const d of sim.dimensions) w[d.id] = weightOverrides[d.id] ?? 5;
+    return w;
+  }, [sim.dimensions, weightOverrides]);
+
+  const hasCustomWeights = Object.keys(weightOverrides).length > 0;
+
+  // Client-side, value-weighted favored branch — drives the live "your
+  // priorities favor X" badge once the user touches a slider.
+  const weightedFavored = useMemo(
+    () =>
+      hasCustomWeights && sim.dimensions.length
+        ? favoredFromComposite(sim.metrics, sim.dimensions, weights).favored
+        : null,
+    [hasCustomWeights, sim.dimensions, sim.metrics, weights],
+  );
+
+  function setWeight(dimId: string, value: number) {
+    setWeightOverrides((w) => ({ ...w, [dimId]: value }));
+  }
+  function resetWeights() {
+    setWeightOverrides({});
+  }
 
   const hasAnyData =
     sim.personas.length > 0 ||
@@ -202,6 +232,7 @@ export function ResultsView({
               <BranchPoints
                 branchPoints={sim.branchPoints}
                 metrics={sim.metrics}
+                dimensions={sim.dimensions}
                 options={options}
               />
             </div>
@@ -227,6 +258,7 @@ export function ResultsView({
                   recommendation={sim.recommendation}
                   options={options}
                   highRisk={highRisk}
+                  weightedFavored={weightedFavored}
                 />
                 <WhatIfEntry />
               </div>
@@ -237,13 +269,27 @@ export function ResultsView({
         {/* Right metrics sidebar */}
         {(sim.metrics.length > 0 || sim.credibility) && (
           <div className="w-full lg:w-96 bg-surface-container-low border-t lg:border-t-0 lg:border-l border-surface-variant flex flex-col shrink-0">
-            {sim.metrics.length > 0 && (
-              <CompositeScores metrics={sim.metrics} />
+            {sim.metrics.length > 0 && sim.dimensions.length > 0 && (
+              <CompositeScores
+                metrics={sim.metrics}
+                dimensions={sim.dimensions}
+                weights={hasCustomWeights ? weights : null}
+              />
+            )}
+            {sim.metrics.length > 0 && sim.dimensions.length > 0 && (
+              <ValueWeights
+                dimensions={sim.dimensions}
+                metrics={sim.metrics}
+                weights={weights}
+                onChange={setWeight}
+                onReset={resetWeights}
+              />
             )}
             <div className="p-md flex-1 overflow-y-auto flex flex-col gap-md">
-              {sim.metrics.length > 0 && (
+              {sim.metrics.length > 0 && sim.dimensions.length > 0 && (
                 <MetricCharts
                   metrics={sim.metrics}
+                  dimensions={sim.dimensions}
                   branchPoints={sim.branchPoints}
                 />
               )}
@@ -262,6 +308,7 @@ export function ResultsView({
         event={selected}
         personas={sim.personas}
         metrics={sim.metrics}
+        dimensions={sim.dimensions}
         options={options}
         onClose={() => setSelected(null)}
       />

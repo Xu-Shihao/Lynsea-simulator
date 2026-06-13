@@ -3,7 +3,9 @@
 
 import type {
   BranchPoint,
+  ClarificationPlan,
   CredibilityCard,
+  Dimension,
   MetricPoint,
   Persona,
   Recommendation,
@@ -87,6 +89,31 @@ export async function fetchSimulation(simId: string): Promise<SimResult> {
   return (await res.json()) as SimResult;
 }
 
+/**
+ * Generate (or refine) a clarification plan for a decision (Phase 7 / FE-02).
+ * Routed through `apiFetch` so a backend-down failure surfaces the same
+ * actionable "is it running?" message as the other helpers. Pass `prior` + a
+ * free-text `note` for an iterative refine round.
+ */
+export async function clarify(
+  decision: string,
+  prior?: ClarificationPlan | null,
+  note?: string | null,
+): Promise<ClarificationPlan> {
+  const res = await apiFetch(`/api/clarify`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ decision, prior: prior ?? null, note: note ?? null }),
+  });
+  if (!res.ok) {
+    const detail = await safeText(res);
+    throw new Error(
+      `Failed to refine the decision (${res.status})${detail ? `: ${detail}` : ""}`,
+    );
+  }
+  return (await res.json()) as ClarificationPlan;
+}
+
 async function safeText(res: Response): Promise<string> {
   try {
     return (await res.text()).slice(0, 300);
@@ -100,6 +127,7 @@ async function safeText(res: Response): Promise<string> {
 export interface StreamHandlers {
   onStatus?: (s: StatusEvent) => void;
   onPersona?: (p: Persona) => void;
+  onDimensions?: (d: Dimension[]) => void;
   onTimelineEvent?: (e: TimelineEvent) => void;
   onMetric?: (m: MetricPoint) => void;
   onBranchPoint?: (b: BranchPoint) => void;
@@ -143,6 +171,10 @@ export function openSimulationStream(
   es.addEventListener("persona", (e) => {
     const d = parse<Persona>((e as MessageEvent).data);
     if (d) handlers.onPersona?.(d);
+  });
+  es.addEventListener("dimensions", (e) => {
+    const d = parse<{ dimensions: Dimension[] }>((e as MessageEvent).data);
+    if (d?.dimensions) handlers.onDimensions?.(d.dimensions);
   });
   es.addEventListener("timeline_event", (e) => {
     const d = parse<TimelineEvent>((e as MessageEvent).data);

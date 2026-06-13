@@ -25,6 +25,17 @@ export interface Persona {
   is_default_inferred: boolean;
 }
 
+export type Polarity = "higher_is_better" | "lower_is_better";
+
+// A per-decision, dynamically generated dimension (4–8 per simulation). The
+// fixed-5 model is gone; charts/scores key off `dimensions` + `scores[dim.id]`.
+export interface Dimension {
+  id: string;
+  label: string;
+  description: string;
+  polarity: Polarity;
+}
+
 export type EventKind = "skeleton" | "perturbation" | "exogenous";
 
 export interface TimelineEvent {
@@ -40,21 +51,18 @@ export interface TimelineEvent {
   evidence: string | null;
 }
 
-// The 5 fixed metric dimensions, each 0-100.
+// Per-month scores for one branch. `scores` is keyed by `Dimension.id`, each
+// value 0–100. The number of keys is dynamic (matches `SimResult.dimensions`).
 export interface MetricPoint {
   branch: Branch;
   month: number;
-  economic: number;
-  career: number;
-  relationship: number;
-  mental: number;
-  autonomy: number;
+  scores: Record<string, number>;
   supporting_event_ids: string[];
 }
 
 export interface BranchPoint {
   month: number;
-  metric: string;
+  dimension: string; // Dimension.id (was the fixed `metric` field)
   magnitude: number;
   description: string;
   cause_chain: string;
@@ -80,6 +88,7 @@ export interface SimResult {
   options: [string, string];
   mode: string;
   seed: number;
+  dimensions: Dimension[];
   personas: Persona[];
   events: TimelineEvent[];
   metrics: MetricPoint[];
@@ -89,17 +98,41 @@ export interface SimResult {
   created_at: string;
 }
 
+// --- Clarification (POST /api/clarify) ---
+
+export interface AffectedPersonHint {
+  name: string;
+  role: string;
+  suggested_stance: string;
+}
+
+export interface ValuePrompt {
+  dim_hint: string;
+  question: string;
+}
+
+export interface ClarificationPlan {
+  suggested_options: string[];
+  affected_people: AffectedPersonHint[];
+  key_factors: string[];
+  value_prompts: ValuePrompt[];
+  constraints: string[];
+  followup_questions: string[];
+}
+
+export interface ClarifyRequest {
+  decision: string;
+  prior?: ClarificationPlan | null;
+  note?: string | null;
+}
+
 // --- Request shape for POST /api/simulate ---
 
 export type SimMode = "quick" | "medium" | "heavy";
 
-export interface ValueWeights {
-  economic: number;
-  career: number;
-  relationship: number;
-  mental: number;
-  autonomy: number;
-}
+// Value weights are keyed by `Dimension.id` (default neutral = 5), since the
+// dimension set is generated per-decision and only known after the run starts.
+export type ValueWeights = Record<string, number>;
 
 export interface SimulateRequest {
   decision: string;
@@ -116,6 +149,7 @@ export type StreamPhase =
   | "clarify"
   | "personas"
   | "backbone"
+  | "dimensions"
   | "branchA"
   | "branchB"
   | "scoring"
@@ -126,22 +160,3 @@ export interface StatusEvent {
   message: string;
   progress: number; // 0..1
 }
-
-// The 5 fixed metric dimension keys.
-export const METRIC_KEYS = [
-  "economic",
-  "career",
-  "relationship",
-  "mental",
-  "autonomy",
-] as const;
-
-export type MetricKey = (typeof METRIC_KEYS)[number];
-
-export const METRIC_LABELS: Record<MetricKey, string> = {
-  economic: "Economic",
-  career: "Career",
-  relationship: "Relationship",
-  mental: "Mental",
-  autonomy: "Autonomy",
-};

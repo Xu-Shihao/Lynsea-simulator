@@ -3,16 +3,16 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Header, Icon } from "../components/Brand";
+import {
+  RefinePanel,
+  type RefinePerson,
+  type RefineResult,
+} from "../components/RefinePanel";
 import { createSimulation } from "../lib/api";
 import { sampleResult } from "../lib/sampleResult";
 import { DEMO_STORAGE_KEY } from "../lib/storage";
 import { BRANCH_COLORS } from "../lib/theme";
-import {
-  METRIC_KEYS,
-  METRIC_LABELS,
-  type SimMode,
-  type ValueWeights,
-} from "../lib/types";
+import { type SimMode } from "../lib/types";
 
 const MODES: { id: SimMode; label: string }[] = [
   { id: "quick", label: "Quick (≤10 min)" },
@@ -27,48 +27,15 @@ const MODE_BLURB: Record<SimMode, string> = {
   heavy: "Heavy mode is the most thorough simulation — and the slowest.",
 };
 
-const DEFAULT_VALUES: ValueWeights = {
-  economic: 5,
-  career: 5,
-  relationship: 5,
-  mental: 5,
-  autonomy: 5,
-};
-
-type PersonStance = "supportive" | "opposed" | "neutral";
-
-interface Influence {
-  name: string;
-  stance: PersonStance;
-  influence: number; // 1..10
-}
-
-const STANCE_NEXT: Record<PersonStance, PersonStance> = {
-  neutral: "supportive",
-  supportive: "opposed",
-  opposed: "neutral",
-};
-
-const STANCE_META: Record<
-  PersonStance,
-  { label: string; color: string; bg: string }
-> = {
-  supportive: { label: "Supports", color: "#34d399", bg: "rgba(52,211,153,0.12)" },
-  opposed: { label: "Opposed", color: "#fd6f85", bg: "rgba(200,71,93,0.15)" },
-  neutral: { label: "Neutral", color: "#a3aac5", bg: "rgba(109,117,142,0.18)" },
-};
-
 export default function InputPage() {
   const router = useRouter();
   const [decision, setDecision] = useState("");
   const [optionA, setOptionA] = useState("");
   const [optionB, setOptionB] = useState("");
-  const [influences, setInfluences] = useState<Influence[]>([]);
-  const [personInput, setPersonInput] = useState("");
+  // People affected, sourced from the refine panel selections.
+  const [people, setPeople] = useState<RefinePerson[]>([]);
   const [mode, setMode] = useState<SimMode>("quick");
   const [showRefine, setShowRefine] = useState(false);
-  const [values, setValues] = useState<ValueWeights>(DEFAULT_VALUES);
-  const [useValues, setUseValues] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -78,48 +45,26 @@ export default function InputPage() {
     optionB.trim().length > 0 &&
     !submitting;
 
-  function addPerson() {
-    const v = personInput.trim();
-    if (v && !influences.some((p) => p.name === v)) {
-      setInfluences((p) => [
-        ...p,
-        { name: v, stance: "neutral", influence: 5 },
-      ]);
-    }
-    setPersonInput("");
-  }
-
-  function removePerson(name: string) {
-    setInfluences((p) => p.filter((x) => x.name !== name));
-  }
-
-  function cycleStance(name: string) {
-    setInfluences((p) =>
-      p.map((x) =>
-        x.name === name ? { ...x, stance: STANCE_NEXT[x.stance] } : x,
-      ),
-    );
-  }
-
-  function setInfluence(name: string, value: number) {
-    setInfluences((p) =>
-      p.map((x) => (x.name === name ? { ...x, influence: value } : x)),
-    );
+  function applyRefine(result: RefineResult) {
+    if (result.optionA) setOptionA(result.optionA);
+    if (result.optionB) setOptionB(result.optionB);
+    if (result.people) setPeople(result.people);
   }
 
   async function handleSubmit() {
     if (!canSubmit) return;
     setSubmitting(true);
     setError(null);
+    // Confirmed (selected) affected people feed the simulate request.
+    const chosen = people.filter((p) => p.selected).map((p) => p.name);
     try {
       const { sim_id } = await createSimulation({
         decision: decision.trim(),
         options: [optionA.trim(), optionB.trim()],
-        affected_people: influences.length
-          ? influences.map((p) => p.name)
-          : undefined,
+        affected_people: chosen.length ? chosen : undefined,
         mode,
-        values: useValues ? values : undefined,
+        // Value weights now live on the results page (dimensions are generated
+        // server-side), so the request omits them — defaulted neutral there.
       });
       router.push(`/sim/${sim_id}`);
     } catch (e) {
@@ -147,9 +92,9 @@ export default function InputPage() {
     );
     setOptionA("Stay at my current job");
     setOptionB("Join the early-stage startup");
-    setInfluences([
-      { name: "Partner", stance: "opposed", influence: 8 },
-      { name: "Mother", stance: "opposed", influence: 6 },
+    setPeople([
+      { name: "Partner", role: "partner", stance: "opposed", selected: true },
+      { name: "Mother", role: "parent", stance: "opposed", selected: true },
     ]);
     setShowRefine(true);
   }
@@ -203,10 +148,7 @@ export default function InputPage() {
               </div>
             </div>
             <div className="flex items-center gap-sm">
-              <Icon
-                name="info"
-                className="text-outline-variant text-sm"
-              />
+              <Icon name="info" className="text-outline-variant text-sm" />
               <span className="font-caption text-caption text-outline">
                 {MODE_BLURB[mode]}
               </span>
@@ -243,8 +185,8 @@ export default function InputPage() {
           />
         </div>
 
-        {/* Refinement panel */}
-        <div className="w-full bg-surface-container-low rounded-lg border border-surface-variant overflow-hidden mb-xl">
+        {/* Dynamic "Refine your world" panel (LLM-generated clarification) */}
+        <div className="w-full bg-surface-container-low rounded-lg border border-surface-variant overflow-hidden mb-md">
           <button
             type="button"
             onClick={() => setShowRefine((s) => !s)}
@@ -257,7 +199,7 @@ export default function InputPage() {
                 Refine your world
               </span>
               <span className="font-caption text-caption text-outline ml-2">
-                (optional)
+                (optional — Lynsea suggests the details)
               </span>
             </div>
             <Icon
@@ -267,115 +209,29 @@ export default function InputPage() {
           </button>
 
           {showRefine && (
-            <div className="p-lg grid grid-cols-1 md:grid-cols-2 gap-xl animate-in">
-              {/* Social circle influences */}
-              <div className="space-y-md">
-                <h3 className="font-label text-outline uppercase tracking-wider text-xs mb-sm">
-                  Social Circle Influences
-                </h3>
-                <div className="space-y-sm">
-                  {influences.map((p) => (
-                    <InfluenceRow
-                      key={p.name}
-                      person={p}
-                      onCycleStance={() => cycleStance(p.name)}
-                      onInfluence={(v) => setInfluence(p.name, v)}
-                      onRemove={() => removePerson(p.name)}
-                    />
-                  ))}
-                  <div className="flex gap-2">
-                    <input
-                      value={personInput}
-                      onChange={(e) => setPersonInput(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          e.preventDefault();
-                          addPerson();
-                        }
-                      }}
-                      placeholder="e.g. Partner, Mother, Manager"
-                      className="flex-1 bg-surface-container border border-surface-variant rounded px-3 py-2 text-sm text-on-surface focus-ring placeholder:text-outline-variant"
-                    />
-                    <button
-                      type="button"
-                      onClick={addPerson}
-                      className="py-2 px-3 border border-dashed border-outline-variant rounded text-on-surface-variant font-label text-caption hover:text-primary hover:border-primary/50 transition-colors flex items-center gap-xs"
-                    >
-                      <Icon name="add_circle" className="text-sm" /> Add
-                    </button>
-                  </div>
-                  <p className="font-caption text-caption text-outline">
-                    Tap a stance to cycle Neutral → Supports → Opposed. Slide to
-                    set how much sway each person holds.
-                  </p>
-                </div>
-              </div>
-
-              {/* Value sliders */}
-              <div className="space-y-md">
-                <div className="flex items-center justify-between mb-sm">
-                  <h3 className="font-label text-outline uppercase tracking-wider text-xs">
-                    What matters most to you
-                  </h3>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <span className="font-caption text-caption text-outline">
-                      {useValues ? "Custom" : "Auto"}
-                    </span>
-                    <button
-                      type="button"
-                      role="switch"
-                      aria-checked={useValues}
-                      onClick={() => setUseValues((v) => !v)}
-                      className={`w-9 h-5 rounded-full relative transition-colors border ${
-                        useValues
-                          ? "bg-primary/30 border-primary/50"
-                          : "bg-surface-container-high border-surface-variant"
-                      }`}
-                    >
-                      <span
-                        className={`absolute top-0.5 w-3.5 h-3.5 rounded-full transition-transform ${
-                          useValues
-                            ? "translate-x-4 bg-primary"
-                            : "translate-x-0.5 bg-outline"
-                        }`}
-                      />
-                    </button>
-                  </label>
-                </div>
-                <div
-                  className={`space-y-3 ${useValues ? "" : "opacity-50 pointer-events-none"}`}
-                >
-                  {METRIC_KEYS.map((key) => (
-                    <div key={key}>
-                      <div className="flex justify-between mb-1">
-                        <span className="font-caption text-caption text-on-surface-variant">
-                          {METRIC_LABELS[key]}
-                        </span>
-                        <span className="font-data-numeric text-data-numeric text-primary text-xs">
-                          {values[key]}/10
-                        </span>
-                      </div>
-                      <input
-                        type="range"
-                        min={0}
-                        max={10}
-                        value={values[key]}
-                        onChange={(e) =>
-                          setValues((v) => ({
-                            ...v,
-                            [key]: Number(e.target.value),
-                          }))
-                        }
-                        className="lynsea-range w-full"
-                        aria-label={`${METRIC_LABELS[key]} importance`}
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
+            <RefinePanel decision={decision} onApply={applyRefine} />
           )}
         </div>
+
+        {/* Selected people summary (when applied via refine) */}
+        {people.some((p) => p.selected) && (
+          <div className="w-full -mt-1 mb-lg flex flex-wrap items-center gap-2">
+            <span className="font-caption text-caption text-outline">
+              Modeling:
+            </span>
+            {people
+              .filter((p) => p.selected)
+              .map((p) => (
+                <span
+                  key={p.name}
+                  className="inline-flex items-center gap-1 rounded-full bg-surface-container border border-surface-variant px-2.5 py-1 text-xs text-on-surface"
+                >
+                  <Icon name="person" className="text-sm text-primary" fill />
+                  {p.name}
+                </span>
+              ))}
+          </div>
+        )}
 
         {error && (
           <div
@@ -386,7 +242,7 @@ export default function InputPage() {
           </div>
         )}
 
-        {/* CTA + demo */}
+        {/* CTA + demo (skip / run now path) */}
         <div className="flex flex-col sm:flex-row items-center gap-md">
           <button
             type="button"
@@ -409,7 +265,9 @@ export default function InputPage() {
           </button>
         </div>
         <p className="mt-md text-center font-caption text-caption text-outline">
-          No backend? “Load demo” renders a full sample result offline.
+          Refining is optional — fill the two options and run now, or let Lynsea
+          suggest the details. No backend? “Load demo” renders a full sample
+          result offline.
         </p>
       </main>
 
@@ -470,80 +328,6 @@ function OptionField({
         className="w-full rounded bg-surface-container-low border px-3 py-2 text-sm text-on-surface focus-ring placeholder:text-outline-variant"
         style={{ borderColor: `${color}55` }}
       />
-    </div>
-  );
-}
-
-function InfluenceRow({
-  person,
-  onCycleStance,
-  onInfluence,
-  onRemove,
-}: {
-  person: Influence;
-  onCycleStance: () => void;
-  onInfluence: (v: number) => void;
-  onRemove: () => void;
-}) {
-  const meta = STANCE_META[person.stance];
-  return (
-    <div className="flex items-center justify-between bg-surface-container p-sm rounded border border-surface-variant gap-2">
-      <div className="flex items-center gap-md min-w-0">
-        <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center border border-primary/30 shrink-0">
-          <Icon name="person" className="text-primary text-sm" fill />
-        </div>
-        <div className="min-w-0">
-          <span className="block font-body text-sm text-on-surface truncate">
-            {person.name}
-          </span>
-          {/* Influence indicator: 5 dots, filled by influence level. */}
-          <div className="flex gap-1 mt-1 items-center">
-            {[0, 1, 2, 3, 4].map((i) => (
-              <span
-                key={i}
-                className="w-1.5 h-1.5 rounded-full"
-                style={{
-                  background:
-                    i < Math.round(person.influence / 2)
-                      ? "#9f92ff"
-                      : "#181f31",
-                }}
-              />
-            ))}
-            <span className="font-caption text-outline text-[10px] ml-1 leading-none">
-              {person.influence}
-            </span>
-          </div>
-        </div>
-      </div>
-      <div className="flex items-center gap-2 shrink-0">
-        <input
-          type="range"
-          min={1}
-          max={10}
-          value={person.influence}
-          onChange={(e) => onInfluence(Number(e.target.value))}
-          className="lynsea-range w-16 hidden sm:block"
-          aria-label={`${person.name} influence`}
-        />
-        <button
-          type="button"
-          onClick={onCycleStance}
-          className="font-label text-caption px-2 py-1 rounded transition-colors"
-          style={{ color: meta.color, background: meta.bg }}
-          aria-label={`${person.name} stance: ${meta.label}. Click to change.`}
-        >
-          {meta.label}
-        </button>
-        <button
-          type="button"
-          onClick={onRemove}
-          className="text-outline hover:text-error transition-colors"
-          aria-label={`Remove ${person.name}`}
-        >
-          <Icon name="close" className="text-sm" />
-        </button>
-      </div>
     </div>
   );
 }

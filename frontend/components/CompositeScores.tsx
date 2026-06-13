@@ -1,22 +1,24 @@
 "use client";
 
 import { compositeScores } from "../lib/simSelectors";
-import { METRIC_LABELS, type MetricPoint, type ValueWeights } from "../lib/types";
+import type { Dimension, MetricPoint, ValueWeights } from "../lib/types";
 import { Icon } from "./Brand";
 
 /**
  * Composite Scores card for the metrics sidebar: a cyan Branch A number and an
  * amber Branch B number, with the value-weighted note. Scores are the
- * final-month value-weighted composite (0–100).
+ * final-month, polarity-aware, value-weighted composite (0–100).
  */
 export function CompositeScores({
   metrics,
+  dimensions,
   weights,
 }: {
   metrics: MetricPoint[];
+  dimensions: Dimension[];
   weights?: ValueWeights | null;
 }) {
-  const { A, B, topValue } = compositeScores(metrics, weights);
+  const { A, B, topValue } = compositeScores(metrics, dimensions, weights);
   if (A == null && B == null) return null;
 
   return (
@@ -45,8 +47,8 @@ export function CompositeScores({
       <div className="flex items-center gap-2 text-xs text-on-surface-variant bg-surface-variant/50 p-2 rounded">
         <Icon name="scale" className="text-[14px]" />
         {topValue
-          ? `Value-weighted based on '${METRIC_LABELS[topValue]}' priority`
-          : "Equal-weighted across the five life dimensions"}
+          ? `Value-weighted toward '${topValue.label}'`
+          : `Equal-weighted across ${dimensions.length} life dimensions`}
       </div>
     </div>
   );

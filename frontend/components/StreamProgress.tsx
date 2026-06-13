@@ -6,6 +6,7 @@ const PHASES: { id: StreamPhase; label: string }[] = [
   { id: "clarify", label: "Clarify" },
   { id: "personas", label: "Personas" },
   { id: "backbone", label: "Backbone" },
+  { id: "dimensions", label: "Dimensions" },
   { id: "branchA", label: "Future A" },
   { id: "branchB", label: "Future B" },
   { id: "scoring", label: "Scoring" },

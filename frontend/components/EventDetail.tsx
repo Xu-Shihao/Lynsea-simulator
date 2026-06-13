@@ -1,11 +1,10 @@
 "use client";
 
 import { useEffect } from "react";
+import { scoreOf } from "../lib/simSelectors";
 import { BRANCH_COLORS, SHARED_COLOR } from "../lib/theme";
 import {
-  METRIC_KEYS,
-  METRIC_LABELS,
-  type MetricKey,
+  type Dimension,
   type MetricPoint,
   type Persona,
   type TimelineEvent,
@@ -16,12 +15,14 @@ export function EventDetail({
   event,
   personas,
   metrics,
+  dimensions,
   options,
   onClose,
 }: {
   event: TimelineEvent | null;
   personas: Persona[];
   metrics: MetricPoint[];
+  dimensions: Dimension[];
   options: [string, string];
   onClose: () => void;
 }) {
@@ -47,12 +48,15 @@ export function EventDetail({
     (id) => !personas.some((p) => p.id === id),
   );
 
-  const supportedMetrics: { key: MetricKey; month: number; value: number }[] =
-    [];
+  const supportedMetrics: { id: string; label: string; value: number }[] = [];
   for (const m of metrics) {
     if (m.supporting_event_ids.includes(event.id)) {
-      for (const k of METRIC_KEYS) {
-        supportedMetrics.push({ key: k, month: m.month, value: m[k] });
+      for (const d of dimensions) {
+        supportedMetrics.push({
+          id: d.id,
+          label: d.label,
+          value: scoreOf(m, d.id),
+        });
       }
       break;
     }
@@ -161,11 +165,11 @@ export function EventDetail({
               <div className="grid grid-cols-2 gap-2">
                 {supportedMetrics.map((m) => (
                   <div
-                    key={m.key}
+                    key={m.id}
                     className="rounded-lg border border-surface-variant bg-surface-container-low px-2.5 py-1.5"
                   >
-                    <div className="text-[11px] text-on-surface-variant">
-                      {METRIC_LABELS[m.key]}
+                    <div className="text-[11px] text-on-surface-variant truncate">
+                      {m.label}
                     </div>
                     <div className="text-sm font-medium tabular-nums text-on-surface">
                       ~{Math.round(m.value)}

@@ -1,6 +1,7 @@
 import type {
   BranchPoint,
   CredibilityCard,
+  Dimension,
   MetricPoint,
   Persona,
   Recommendation,
@@ -11,8 +12,51 @@ import type {
 // A rich, valid fixture for the canonical demo case:
 // "Should I take the higher-paying but higher-stress job?"
 // Branch A = "Take the new job", Branch B = "Stay at my current job".
-// 6 months, both branches, all 5 metrics each month, branch points,
-// a credibility card, a recommendation, and an inferred persona.
+// 6 months, both branches, dynamic per-decision dimensions (6, mixed polarity),
+// branch points keyed by dimension id, a credibility card, a recommendation,
+// and an inferred persona. Matches the dynamic-dimension backend contract so
+// `?demo=1` renders N curves with no backend.
+
+// Six generated dimensions for this decision (mixed polarity: `stress_load`
+// is lower_is_better, exercising the polarity-aware composite).
+const dimensions: Dimension[] = [
+  {
+    id: "economic",
+    label: "Economic Security",
+    description: "Income, savings runway, and financial stability.",
+    polarity: "higher_is_better",
+  },
+  {
+    id: "career",
+    label: "Career Trajectory",
+    description: "Growth, skills, and advancement opportunity.",
+    polarity: "higher_is_better",
+  },
+  {
+    id: "relationship",
+    label: "Relationship Health",
+    description: "Quality of time and connection with your partner.",
+    polarity: "higher_is_better",
+  },
+  {
+    id: "mental",
+    label: "Mental Wellbeing",
+    description: "Energy, mood, and overall psychological health.",
+    polarity: "higher_is_better",
+  },
+  {
+    id: "stress_load",
+    label: "Stress Load",
+    description: "Sustained pressure and overwork (lower is healthier).",
+    polarity: "lower_is_better",
+  },
+  {
+    id: "autonomy",
+    label: "Autonomy",
+    description: "Control over your time and how you work.",
+    polarity: "higher_is_better",
+  },
+];
 
 const personas: Persona[] = [
   {
@@ -225,66 +269,43 @@ const events: TimelineEvent[] = [
   },
 ];
 
-// Per-month metrics for each branch (0-100 each dimension).
+// Per-month metrics for each branch. `scores` is keyed by dimension id, 0–100.
+// `stress_load` is lower_is_better, so higher values in Branch A read as worse.
 const metricsA: MetricPoint[] = [
   {
     branch: "A",
     month: 0,
-    economic: 62,
-    career: 58,
-    relationship: 60,
-    mental: 55,
-    autonomy: 50,
+    scores: { economic: 62, career: 58, relationship: 60, mental: 55, stress_load: 45, autonomy: 50 },
     supporting_event_ids: ["a_m0_start"],
   },
   {
     branch: "A",
     month: 1,
-    economic: 70,
-    career: 63,
-    relationship: 52,
-    mental: 46,
-    autonomy: 45,
+    scores: { economic: 70, career: 63, relationship: 52, mental: 46, stress_load: 64, autonomy: 45 },
     supporting_event_ids: ["a_m1_ramp"],
   },
   {
     branch: "A",
     month: 2,
-    economic: 74,
-    career: 72,
-    relationship: 50,
-    mental: 48,
-    autonomy: 47,
+    scores: { economic: 74, career: 72, relationship: 50, mental: 48, stress_load: 66, autonomy: 47 },
     supporting_event_ids: ["a_m2_first_win"],
   },
   {
     branch: "A",
     month: 3,
-    economic: 73,
-    career: 70,
-    relationship: 47,
-    mental: 43,
-    autonomy: 44,
+    scores: { economic: 73, career: 70, relationship: 47, mental: 43, stress_load: 70, autonomy: 44 },
     supporting_event_ids: ["a_m3_market"],
   },
   {
     branch: "A",
     month: 4,
-    economic: 76,
-    career: 74,
-    relationship: 44,
-    mental: 45,
-    autonomy: 50,
+    scores: { economic: 76, career: 74, relationship: 44, mental: 45, stress_load: 68, autonomy: 50 },
     supporting_event_ids: ["a_m4_strain"],
   },
   {
     branch: "A",
     month: 5,
-    economic: 80,
-    career: 82,
-    relationship: 52,
-    mental: 53,
-    autonomy: 55,
+    scores: { economic: 80, career: 82, relationship: 52, mental: 53, stress_load: 58, autonomy: 55 },
     supporting_event_ids: ["a_m5_promotion_track"],
   },
 ];
@@ -293,61 +314,37 @@ const metricsB: MetricPoint[] = [
   {
     branch: "B",
     month: 0,
-    economic: 60,
-    career: 56,
-    relationship: 62,
-    mental: 62,
-    autonomy: 58,
+    scores: { economic: 60, career: 56, relationship: 62, mental: 62, stress_load: 38, autonomy: 58 },
     supporting_event_ids: ["b_m0_stay"],
   },
   {
     branch: "B",
     month: 1,
-    economic: 60,
-    career: 55,
-    relationship: 68,
-    mental: 66,
-    autonomy: 60,
+    scores: { economic: 60, career: 55, relationship: 68, mental: 66, stress_load: 32, autonomy: 60 },
     supporting_event_ids: ["b_m1_steady"],
   },
   {
     branch: "B",
     month: 2,
-    economic: 60,
-    career: 52,
-    relationship: 67,
-    mental: 63,
-    autonomy: 60,
+    scores: { economic: 60, career: 52, relationship: 67, mental: 63, stress_load: 35, autonomy: 60 },
     supporting_event_ids: ["b_m2_restless"],
   },
   {
     branch: "B",
     month: 3,
-    economic: 61,
-    career: 51,
-    relationship: 66,
-    mental: 62,
-    autonomy: 61,
+    scores: { economic: 61, career: 51, relationship: 66, mental: 62, stress_load: 36, autonomy: 61 },
     supporting_event_ids: ["b_m3_market"],
   },
   {
     branch: "B",
     month: 4,
-    economic: 61,
-    career: 56,
-    relationship: 67,
-    mental: 66,
-    autonomy: 68,
+    scores: { economic: 61, career: 56, relationship: 67, mental: 66, stress_load: 33, autonomy: 68 },
     supporting_event_ids: ["b_m4_side_project"],
   },
   {
     branch: "B",
     month: 5,
-    economic: 61,
-    career: 50,
-    relationship: 67,
-    mental: 64,
-    autonomy: 66,
+    scores: { economic: 61, career: 50, relationship: 67, mental: 64, stress_load: 34, autonomy: 66 },
     supporting_event_ids: ["b_m5_plateau"],
   },
 ];
@@ -355,16 +352,25 @@ const metricsB: MetricPoint[] = [
 const branch_points: BranchPoint[] = [
   {
     month: 1,
-    metric: "mental",
+    dimension: "stress_load",
+    magnitude: 32,
+    description:
+      "Stress load diverges early: the new job's ramp-up likely drives sustained pressure ~32 points higher than the steady status quo.",
+    cause_chain:
+      "Higher role expectations -> longer hours -> reduced recovery time -> elevated stress load in Branch A.",
+  },
+  {
+    month: 1,
+    dimension: "mental",
     magnitude: 20,
     description:
-      "Mental wellbeing diverges early: the new job's ramp-up likely costs ~20 points versus the steady status quo.",
+      "Mental wellbeing diverges early: the ramp-up likely costs ~20 points versus staying put.",
     cause_chain:
-      "Higher role expectations -> longer hours -> reduced recovery time -> lower mental wellbeing in Branch A.",
+      "Sustained overwork -> poorer sleep and recovery -> lower mental wellbeing in Branch A.",
   },
   {
     month: 5,
-    metric: "career",
+    dimension: "career",
     magnitude: 32,
     description:
       "Career trajectory diverges sharply by month 6: the promotion track in Branch A likely pulls ahead by ~32 points.",
@@ -399,6 +405,7 @@ export const sampleResult: SimResult = {
   options: ["Take the new job", "Stay at my current job"],
   mode: "quick",
   seed: 12345,
+  dimensions,
   personas,
   events,
   metrics: [...metricsA, ...metricsB],

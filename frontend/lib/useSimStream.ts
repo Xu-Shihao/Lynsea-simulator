@@ -5,6 +5,7 @@ import { fetchSimulation, openSimulationStream } from "./api";
 import type {
   BranchPoint,
   CredibilityCard,
+  Dimension,
   MetricPoint,
   Persona,
   Recommendation,
@@ -16,6 +17,7 @@ import type {
 export interface SimState {
   decision: string;
   options: [string, string] | null;
+  dimensions: Dimension[];
   personas: Persona[];
   events: TimelineEvent[];
   metrics: MetricPoint[];
@@ -32,6 +34,7 @@ export interface SimState {
 const EMPTY: SimState = {
   decision: "",
   options: null,
+  dimensions: [],
   personas: [],
   events: [],
   metrics: [],
@@ -48,6 +51,7 @@ function fromResult(r: SimResult): SimState {
   return {
     decision: r.decision,
     options: r.options,
+    dimensions: r.dimensions ?? [],
     personas: r.personas,
     events: r.events,
     metrics: r.metrics,
@@ -130,6 +134,8 @@ export function useSimStream({
         setState((s) =>
           cancelled ? s : { ...s, personas: upsertById(s.personas, p) },
         ),
+      onDimensions: (dims) =>
+        setState((s) => (cancelled ? s : { ...s, dimensions: dims })),
       onTimelineEvent: (e) =>
         setState((s) =>
           cancelled ? s : { ...s, events: upsertById(s.events, e) },
