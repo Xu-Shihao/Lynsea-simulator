@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Lynsea - Parallel Futures Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "surface-container-lowest": "#000000",
+                        "on-error-container": "#ff97a3",
+                        "error": "#fd6f85",
+                        "outline": "#6d758e",
+                        "secondary-fixed": "#a2eeff",
+                        "secondary-container": "#002a31",
+                        "primary-container": "#9182fd",
+                        "primary": "#9f92ff",
+                        "surface-variant": "#1d253a",
+                        "tertiary-container": "#fcc025",
+                        "on-tertiary": "#614700",
+                        "primary-fixed": "#c2b9ff",
+                        "tertiary-fixed": "#fcc025",
+                        "secondary": "#2fd9f4",
+                        "tertiary-dim": "#edb210",
+                        "surface-dim": "#0a0e19",
+                        "primary-dim": "#9d8fff",
+                        "on-secondary-fixed-variant": "#006573",
+                        "inverse-primary": "#5c4cc4",
+                        "on-secondary-container": "#00b4cc",
+                        "tertiary-fixed-dim": "#edb210",
+                        "surface": "#0a0e19",
+                        "inverse-on-surface": "#515562",
+                        "primary-fixed-dim": "#b3a9ff",
+                        "error-container": "#8a1632",
+                        "secondary-dim": "#00cbe6",
+                        "on-primary": "#1f0078",
+                        "surface-tint": "#9f92ff",
+                        "on-tertiary-fixed": "#3d2b00",
+                        "tertiary": "#ffd16f",
+                        "surface-container-highest": "#1d253a",
+                        "on-error": "#490013",
+                        "inverse-surface": "#faf8ff",
+                        "on-surface-variant": "#a3aac5",
+                        "error-dim": "#c8475d",
+                        "surface-container": "#131929",
+                        "on-background": "#dee5ff",
+                        "surface-container-high": "#181f31",
+                        "on-primary-fixed": "#230086",
+                        "outline-variant": "#40475e",
+                        "on-tertiary-container": "#563e00",
+                        "on-secondary-fixed": "#004651",
+                        "background": "#0a0e19",
+                        "on-surface": "#dee5ff",
+                        "surface-container-low": "#0e1320",
+                        "on-secondary": "#004752",
+                        "on-tertiary-fixed-variant": "#614700",
+                        "secondary-fixed-dim": "#5de6ff",
+                        "on-primary-fixed-variant": "#422ea8",
+                        "surface-bright": "#232b43",
+                        "on-primary-container": "#11004e",
+                        
+                        // Custom Brand Colors based on prompt
+                        "brand-cyan": "#22D3EE",
+                        "brand-amber": "#FBBF24",
+                        "brand-magenta": "#F472B6",
+                        "brand-navy": "#0B0F1A",
+                    },
+                    borderRadius: {
+                        DEFAULT: "0.25rem",
+                        lg: "0.5rem",
+                        xl: "0.75rem",
+                        full: "9999px"
+                    },
+                    spacing: {
+                        xs: "4px",
+                        xl: "40px",
+                        unit: "4px",
+                        md: "16px",
+                        lg: "24px",
+                        sm: "8px",
+                        margin: "32px",
+                        gutter: "24px"
+                    },
+                    fontFamily: {
+                        title: ["Space Grotesk", "sans-serif"],
+                        headline: ["Space Grotesk", "sans-serif"],
+                        display: ["Space Grotesk", "sans-serif"],
+                        "data-numeric": ["Inter", "sans-serif"],
+                        caption: ["Inter", "sans-serif"],
+                        label: ["Inter", "sans-serif"],
+                        body: ["Inter", "sans-serif"]
+                    },
+                    fontSize: {
+                        title: ["20px", { lineHeight: "28px", fontWeight: "500" }],
+                        headline: ["28px", { lineHeight: "36px", fontWeight: "600" }],
+                        display: ["40px", { lineHeight: "48px", letterSpacing: "-0.02em", fontWeight: "700" }],
+                        "data-numeric": ["14px", { lineHeight: "20px", letterSpacing: "0.05em", fontWeight: "600" }],
+                        caption: ["12px", { lineHeight: "16px", fontWeight: "400" }],
+                        label: ["14px", { lineHeight: "20px", fontWeight: "500" }],
+                        body: ["16px", { lineHeight: "24px", fontWeight: "400" }]
+                    },
+                    backgroundImage: {
+                        'grid-pattern': `linear-gradient(to right, #1F2738 1px, transparent 1px), linear-gradient(to bottom, #1F2738 1px, transparent 1px)`
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            background-color: #0B0F1A;
+            background-image: linear-gradient(to right, #1F2738 1px, transparent 1px), linear-gradient(to bottom, #1F2738 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+        
+        .glow-cyan { box-shadow: 0 0 15px rgba(34, 211, 238, 0.2); }
+        .glow-amber { box-shadow: 0 0 15px rgba(251, 191, 36, 0.2); }
+        .glow-magenta { box-shadow: 0 0 15px rgba(244, 114, 182, 0.4); }
+        
+        .pulse-dot {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 0.5; transform: scale(0.8); }
+            50% { opacity: 1; transform: scale(1.2); }
+            100% { opacity: 0.5; transform: scale(0.8); }
+        }
+        
+        /* Custom scrollbar for dark theme */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0B0F1A; }
+        ::-webkit-scrollbar-thumb { background: #1d253a; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #40475e; }
+    </style>
+</head>
+<body class="text-on-surface font-body min-h-screen flex flex-col">
+<!-- Top Navigation Container -->
+<header class="bg-background/80 backdrop-blur-md border-b border-outline-variant flex justify-between items-center w-full px-lg h-xl z-50 fixed top-0 docked full-width flat no shadows">
+<div class="flex items-center gap-md">
+<div class="font-display text-display font-bold tracking-tighter text-primary">Lynsea</div>
+<nav class="hidden md:flex gap-lg ml-xl">
+<a class="font-title text-title text-primary border-b-2 border-primary pb-1" href="#">Observatory</a>
+<a class="font-title text-title text-on-surface-variant hover:text-secondary transition-colors duration-200" href="#">History</a>
+<a class="font-title text-title text-on-surface-variant hover:text-secondary transition-colors duration-200" href="#">Library</a>
+<a class="font-title text-title text-on-surface-variant hover:text-secondary transition-colors duration-200" href="#">Vault</a>
+</nav>
+</div>
+<div class="flex items-center gap-md">
+<button class="text-primary dark:text-primary-dim hover:text-secondary transition-colors duration-200">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">analytics</span>
+</button>
+<button class="text-primary dark:text-primary-dim hover:text-secondary transition-colors duration-200">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">settings</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-surface-variant overflow-hidden border border-outline">
+<img alt="User avatar" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCHJ8hdmEr9GHixbhV5U5h4KNKL-aXAPoq4VhAAdxYY2g0nyYwxQJILfsgoKJj59ofnMUVKq4gsP9pRRA5k7aliiEo5TOivJ-zXd-QerVU4UwND9B8ikCA9rFCpXNV8qux_1uHbOZWyPvkC7HVPyleIqiM6Dr8Bpo8pQtrdeKHfEtRctyC9X3ZUuryGIgRyA_JTXxzzu9P3w7EdHD0B7omViS1jTXgw9ND8H1xegKBtZFNCw0NgVW_xAuSjLSjWXZ2ZWff3e_LZxys"/>
+</div>
+</div>
+</header>
+<!-- Side Navigation -->
+<aside class="fixed left-0 top-xl bottom-0 flex flex-col py-md z-40 bg-surface-container-low dark:bg-surface-container-low border-r border-outline-variant docked h-full w-64 flat no shadows hidden lg:flex">
+<div class="px-md mb-lg">
+<div class="flex items-center gap-sm mb-xs">
+<div class="w-6 h-6 rounded bg-primary-container flex items-center justify-center text-on-primary-container font-bold text-xs">PA</div>
+<h2 class="font-headline text-headline text-on-surface text-sm leading-tight">Project Alpha</h2>
+</div>
+<p class="font-caption text-caption text-on-surface-variant">Relocation vs. Remote</p>
+</div>
+<nav class="flex-1 overflow-y-auto">
+<a class="flex items-center gap-md px-md py-sm mb-xs bg-secondary-container text-on-secondary-container rounded-r-full font-bold" href="#">
+<span class="material-symbols-outlined text-sm">radar</span>
+<span class="font-label text-label">Current Simulation</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm mb-xs text-on-surface-variant hover:text-on-surface hover:bg-surface-variant transition-all" href="#">
+<span class="material-symbols-outlined text-sm">alt_route</span>
+<span class="font-label text-label">Parallel Paths</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm mb-xs text-on-surface-variant hover:text-on-surface hover:bg-surface-variant transition-all" href="#">
+<span class="material-symbols-outlined text-sm">query_stats</span>
+<span class="font-label text-label">Metric Analysis</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm mb-xs text-on-surface-variant hover:text-on-surface hover:bg-surface-variant transition-all" href="#">
+<span class="material-symbols-outlined text-sm">auto_awesome</span>
+<span class="font-label text-label">Core Values</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm mb-xs text-on-surface-variant hover:text-on-surface hover:bg-surface-variant transition-all" href="#">
+<span class="material-symbols-outlined text-sm">gpp_maybe</span>
+<span class="font-label text-label">Risk Assessment</span>
+</a>
+</nav>
+<div class="px-md mt-auto pt-md border-t border-outline-variant">
+<button class="w-full py-2 bg-primary text-on-primary rounded font-label text-label mb-md hover:opacity-90 transition-opacity">
+                New Simulation
+            </button>
+<div class="flex flex-col gap-xs">
+<a class="flex items-center gap-md py-xs text-on-surface-variant hover:text-on-surface" href="#">
+<span class="material-symbols-outlined text-sm">help_outline</span>
+<span class="font-label text-label text-xs">Help</span>
+</a>
+<a class="flex items-center gap-md py-xs text-on-surface-variant hover:text-on-surface" href="#">
+<span class="material-symbols-outlined text-sm">description</span>
+<span class="font-label text-label text-xs">Docs</span>
+</a>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="pt-[80px] lg:pl-64 flex-1 flex flex-col md:flex-row relative z-10">
+<!-- Dashboard Canvas -->
+<div class="flex-1 flex flex-col min-h-screen">
+<!-- Dashboard Header -->
+<div class="px-xl py-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-md border-b border-surface-variant/50 bg-background/90 backdrop-blur-sm sticky top-[40px] z-20">
+<div class="max-w-2xl">
+<p class="font-caption text-caption text-on-surface-variant uppercase tracking-wider mb-xs">Decision Matrix</p>
+<h1 class="font-headline text-headline text-on-surface">Should I quit my stable job to join an early-stage startup?</h1>
+</div>
+<div class="flex flex-col items-end gap-sm">
+<div class="flex items-center gap-sm">
+<span class="px-3 py-1 rounded-full bg-surface-container-high border border-outline-variant font-label text-label text-xs flex items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-[14px]">timer</span> Quick · 6 months
+                        </span>
+<span class="px-3 py-1 rounded-full bg-surface-container-high border border-primary/30 font-label text-label text-xs flex items-center gap-2 text-primary">
+<div class="w-2 h-2 rounded-full bg-primary pulse-dot"></div>
+                            Streaming… 23 events
+                        </span>
+</div>
+<div class="flex items-center gap-2 text-on-surface-variant font-caption text-caption">
+<span class="material-symbols-outlined text-[14px] text-brand-cyan">verified</span>
+                        seed-locked ✓ controlled experiment
+                    </div>
+<!-- Legend -->
+<div class="flex gap-md mt-sm">
+<div class="flex items-center gap-2 bg-surface-container px-3 py-1 rounded-full border border-surface-variant">
+<div class="w-3 h-3 rounded-full bg-brand-cyan glow-cyan"></div>
+<span class="font-label text-label text-xs">A = Stay</span>
+</div>
+<div class="flex items-center gap-2 bg-surface-container px-3 py-1 rounded-full border border-surface-variant">
+<div class="w-3 h-3 rounded-full bg-brand-amber glow-amber"></div>
+<span class="font-label text-label text-xs">B = Join</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Split Timeline Area -->
+<div class="flex-1 relative py-xl px-4 md:px-lg overflow-x-hidden">
+<!-- Central Timeline Axis -->
+<div class="absolute left-1/2 top-0 bottom-0 w-[2px] bg-surface-variant transform -translate-x-1/2 z-0"></div>
+<!-- Timeline Grid Containers -->
+<div class="max-w-5xl mx-auto relative z-10">
+<!-- Month 0 -->
+<div class="flex items-center justify-center mb-16 relative">
+<div class="bg-surface-container border border-outline-variant rounded px-3 py-1 font-data-numeric text-data-numeric text-on-surface-variant z-10">M0</div>
+</div>
+<!-- Month 1 -->
+<div class="flex w-full mb-16 relative">
+<!-- Branch A (Left) -->
+<div class="w-1/2 pr-lg flex justify-end">
+<div class="bg-surface-container border-l-2 border-brand-cyan rounded-lg p-md w-full max-w-sm glow-cyan relative group">
+<h3 class="font-title text-title text-on-surface mb-xs">Steady sprint</h3>
+<p class="font-caption text-caption text-on-surface-variant mb-sm">Current project enters maintenance phase. Predictable hours.</p>
+<div class="flex gap-2">
+<span class="px-2 py-0.5 rounded bg-surface-variant font-caption text-caption text-[10px]">Stability</span>
+</div>
+</div>
+</div>
+<!-- Axis Marker -->
+<div class="absolute left-1/2 top-1/2 w-4 h-4 rounded-full bg-surface-variant border-2 border-background transform -translate-x-1/2 -translate-y-1/2 z-10"></div>
+<div class="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-full mb-2 bg-background px-2 font-data-numeric text-data-numeric text-on-surface-variant z-10">M1</div>
+<!-- Branch B (Right) -->
+<div class="w-1/2 pl-lg flex justify-start">
+<div class="bg-surface-container border-l-2 border-brand-amber rounded-lg p-md w-full max-w-sm glow-amber relative">
+<h3 class="font-title text-title text-on-surface mb-xs">Onboarding chaos</h3>
+<p class="font-caption text-caption text-on-surface-variant mb-sm">No formal process. Immediate deep-dive into messy legacy codebase.</p>
+<div class="flex gap-2">
+<span class="px-2 py-0.5 rounded bg-surface-variant font-caption text-caption text-[10px]">High Stress</span>
+<span class="px-2 py-0.5 rounded bg-surface-variant font-caption text-caption text-[10px]">Learning</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Month 2 Shared -->
+<div class="flex justify-center mb-16 relative w-full">
+<div class="bg-surface-container border border-dashed border-outline rounded-lg p-md w-full max-w-xl text-center relative z-10 shadow-[0_0_20px_rgba(0,0,0,0.5)]">
+<div class="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-surface-variant px-2 py-0.5 rounded text-[10px] font-label text-on-surface-variant uppercase flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]">link</span> Shared Event
+                            </div>
+<h3 class="font-title text-title text-on-surface mb-xs mt-1">Partner receives job offer</h3>
+<p class="font-caption text-caption text-on-surface-variant">Requires relocation discussion regardless of your path.</p>
+</div>
+<div class="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-full mb-2 bg-background px-2 font-data-numeric text-data-numeric text-on-surface-variant z-10">M2</div>
+</div>
+<!-- Month 3 Fork Point -->
+<div class="w-full relative mb-16 py-md">
+<!-- Horizontal Fork Line -->
+<div class="absolute top-1/2 left-0 right-0 h-[1px] bg-brand-magenta/30 z-0"></div>
+<div class="absolute top-1/2 left-1/4 right-1/4 h-[1px] bg-brand-magenta z-0 glow-magenta"></div>
+<div class="flex justify-center relative z-10">
+<div class="bg-surface-container-high border border-brand-magenta rounded-full px-4 py-2 flex items-center gap-sm glow-magenta">
+<div class="w-3 h-3 rounded-full bg-brand-magenta animate-pulse"></div>
+<span class="font-label text-label text-brand-magenta text-sm">Paths diverge most here — income stability vs. growth</span>
+</div>
+</div>
+<div class="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-full bg-background px-2 font-data-numeric text-data-numeric text-on-surface-variant z-10 mt-2">M3</div>
+</div>
+<!-- Month 3 divergent -->
+<div class="flex w-full mb-16 relative">
+<div class="w-1/2 pr-lg flex justify-end">
+<div class="bg-surface-container border-l-2 border-brand-cyan rounded-lg p-md w-full max-w-sm">
+<h3 class="font-title text-title text-on-surface mb-xs text-on-surface-variant/70">Promotion stalls</h3>
+<p class="font-caption text-caption text-on-surface-variant mb-sm">Budget cuts freeze Q3 title changes.</p>
+</div>
+</div>
+<div class="absolute left-1/2 top-1/2 w-4 h-4 rounded-full bg-surface-variant border-2 border-background transform -translate-x-1/2 -translate-y-1/2 z-10"></div>
+<div class="w-1/2 pl-lg flex justify-start">
+<div class="bg-surface-container border-l-2 border-brand-amber rounded-lg p-md w-full max-w-sm glow-amber">
+<h3 class="font-title text-title text-on-surface mb-xs">Ship first feature</h3>
+<p class="font-caption text-caption text-on-surface-variant mb-sm">High visibility launch. Direct positive feedback from early users.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Footer Recommendation Strip -->
+<div class="bg-surface-container-high border-t border-surface-variant p-md relative z-20">
+<div class="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-md">
+<div>
+<div class="flex items-center gap-sm mb-xs">
+<span class="material-symbols-outlined text-brand-amber">trending_up</span>
+<span class="font-label text-label font-bold text-on-surface">Leans B — around a 60% chance it scores higher for you.</span>
+</div>
+<p class="font-caption text-caption text-on-surface-variant">Values Autonomy over short-term Stability based on your profile.</p>
+<p class="font-caption text-caption text-outline mt-1 text-[10px] uppercase">This is a simulation, not a prediction — change any assumption and re-run.</p>
+</div>
+<button class="bg-primary-container/10 border border-primary-container text-primary rounded-lg px-4 py-2 font-label text-label flex items-center gap-2 hover:bg-primary-container/20 transition-colors">
+<span class="material-symbols-outlined text-[18px]">add_circle</span>
+                        Ask a what-if...
+                        <span class="bg-primary/20 text-primary text-[10px] px-1.5 py-0.5 rounded ml-2">Branch C</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Right Metrics Sidebar -->
+<div class="w-full md:w-80 lg:w-96 bg-surface-container-low border-l border-surface-variant flex flex-col shrink-0">
+<!-- Scores Header -->
+<div class="p-md border-b border-surface-variant">
+<h3 class="font-title text-title text-on-surface mb-sm">Composite Scores</h3>
+<div class="flex justify-between items-end mb-md">
+<div class="text-center">
+<div class="font-display text-display text-brand-cyan glow-cyan">61</div>
+<div class="font-caption text-caption text-on-surface-variant">Branch A</div>
+</div>
+<div class="text-center">
+<div class="font-display text-display text-brand-amber glow-amber">67</div>
+<div class="font-caption text-caption text-on-surface-variant">Branch B</div>
+</div>
+</div>
+<div class="flex items-center gap-2 text-xs text-on-surface-variant bg-surface-variant/50 p-2 rounded">
+<span class="material-symbols-outlined text-[14px]">scale</span>
+                    Value-weighted based on 'Growth' priority
+                </div>
+</div>
+<!-- Mini Charts -->
+<div class="p-md flex-1 overflow-y-auto flex flex-col gap-md">
+<h4 class="font-label text-label text-on-surface-variant uppercase tracking-wider text-xs mb-xs">Dimensional Trajectories</h4>
+<!-- Chart 1 -->
+<div class="bg-surface-container rounded p-sm border border-outline-variant/30">
+<div class="flex justify-between items-center mb-2">
+<span class="font-caption text-caption text-on-surface">Economic</span>
+<span class="text-[10px] text-brand-cyan">A &gt; B</span>
+</div>
+<div class="h-16 relative bg-surface-variant/20 rounded border border-surface-variant overflow-hidden">
+<!-- CSS mock charts for visual representation -->
+<div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiPjxwb2x5bGluZSBwb2ludHM9IjAsNDAgMjAsMzUgNDAsMzAgNjAsMjUgODAsMjAgMTAwLDE1IiBmaWxsPSJub25lIiBzdHJva2U9IiMyMkQzRUUiIHN0cm9rZS13aWR0aD0iMiIvPjwvc3ZnPg==')] bg-no-repeat bg-cover opacity-80" style="filter: drop-shadow(0 0 2px #22D3EE);"></div>
+<div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiPjxwb2x5bGluZSBwb2ludHM9IjAsNDAgMjAsNDUgNDAsNTUgNjAsNTAgODAsNjAgMTAwLDY1IiBmaWxsPSJub25lIiBzdHJva2U9IiNGQkJGMjQiIHN0cm9rZS13aWR0aD0iMiIvPjwvc3ZnPg==')] bg-no-repeat bg-cover opacity-80" style="filter: drop-shadow(0 0 2px #FBBF24);"></div>
+</div>
+</div>
+<!-- Chart 2 -->
+<div class="bg-surface-container rounded p-sm border border-outline-variant/30">
+<div class="flex justify-between items-center mb-2">
+<span class="font-caption text-caption text-on-surface">Career</span>
+<span class="text-[10px] text-brand-amber">B &gt; A</span>
+</div>
+<div class="h-16 relative bg-surface-variant/20 rounded border border-surface-variant overflow-hidden">
+<div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiPjxwb2x5bGluZSBwb2ludHM9IjAsNTAgMjAsNDggNDAsNDUgNjAsNDAgODAsNDIgMTAwLDQ1IiBmaWxsPSJub25lIiBzdHJva2U9IiMyMkQzRUUiIHN0cm9rZS13aWR0aD0iMiIvPjwvc3ZnPg==')] bg-no-repeat bg-cover opacity-80"></div>
+<div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiPjxwb2x5bGluZSBwb2ludHM9IjAsNTAgMjAsNDAgNDAsMjAgNjAsMTAgODAsNSAxMDAsMiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjRkJCRjI0IiBzdHJva2Utd2lkdGg9IjIiLz4=')] bg-no-repeat bg-cover opacity-80"></div>
+</div>
+</div>
+<!-- Credibility Card -->
+<div class="mt-auto bg-surface-container rounded-lg p-md border border-surface-variant">
+<div class="flex items-center gap-sm mb-sm">
+<span class="material-symbols-outlined text-outline">fact_check</span>
+<h4 class="font-label text-label text-on-surface">Simulation Credibility</h4>
+<span class="ml-auto font-data-numeric text-data-numeric text-on-surface">62/100</span>
+</div>
+<div class="space-y-2 mb-sm">
+<div>
+<div class="flex justify-between text-[10px] text-on-surface-variant mb-1">
+<span>Data sufficiency</span>
+<span>55</span>
+</div>
+<div class="h-1 bg-surface-variant rounded-full overflow-hidden">
+<div class="h-full bg-outline w-[55%]"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between text-[10px] text-on-surface-variant mb-1">
+<span>Causal confidence</span>
+<span>60</span>
+</div>
+<div class="h-1 bg-surface-variant rounded-full overflow-hidden">
+<div class="h-full bg-outline w-[60%]"></div>
+</div>
+</div>
+</div>
+<p class="text-[10px] text-outline italic">Directional only; personas built from limited input.</p>
+</div>
+</div>
+</div>
+</main>
+</body></html>
