@@ -1,0 +1,6 @@
+[submodule "MiroFish"]
+	path = MiroFish
+	url = https://github.com/666ghj/MiroFish
+[submodule "EverOS"]
+	path = EverOS
+	url = https://github.com/EverMind-AI/EverOS
