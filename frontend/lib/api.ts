@@ -1,0 +1,153 @@
+// API helpers for the Lynsea backend. The API base is read from
+// NEXT_PUBLIC_API_BASE (default http://localhost:8000).
+
+import type {
+  BranchPoint,
+  CredibilityCard,
+  MetricPoint,
+  Persona,
+  Recommendation,
+  SimResult,
+  SimulateRequest,
+  StatusEvent,
+  TimelineEvent,
+} from "./types";
+
+export const API_BASE =
+  process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8000";
+
+/**
+ * Create a simulation. Returns the sim_id.
+ * Validates that exactly 2 options are provided (FROZEN contract).
+ */
+export async function createSimulation(
+  req: SimulateRequest,
+): Promise<{ sim_id: string }> {
+  if (!req.options || req.options.length !== 2) {
+    throw new Error("Exactly 2 options are required.");
+  }
+  const res = await fetch(`${API_BASE}/api/simulate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(req),
+  });
+  if (!res.ok) {
+    const detail = await safeText(res);
+    throw new Error(
+      `Failed to start simulation (${res.status})${detail ? `: ${detail}` : ""}`,
+    );
+  }
+  return (await res.json()) as { sim_id: string };
+}
+
+/** Fetch a complete, already-finished simulation (used for reload). */
+export async function fetchSimulation(simId: string): Promise<SimResult> {
+  const res = await fetch(`${API_BASE}/api/simulate/${simId}`);
+  if (!res.ok) {
+    const detail = await safeText(res);
+    throw new Error(
+      `Failed to load simulation (${res.status})${detail ? `: ${detail}` : ""}`,
+    );
+  }
+  return (await res.json()) as SimResult;
+}
+
+async function safeText(res: Response): Promise<string> {
+  try {
+    return (await res.text()).slice(0, 300);
+  } catch {
+    return "";
+  }
+}
+
+// --- SSE streaming -----------------------------------------------------------
+
+export interface StreamHandlers {
+  onStatus?: (s: StatusEvent) => void;
+  onPersona?: (p: Persona) => void;
+  onTimelineEvent?: (e: TimelineEvent) => void;
+  onMetric?: (m: MetricPoint) => void;
+  onBranchPoint?: (b: BranchPoint) => void;
+  onCredibility?: (c: CredibilityCard) => void;
+  onRecommendation?: (r: Recommendation) => void;
+  onDone?: (d: { sim_id: string }) => void;
+  onError?: (message: string) => void;
+}
+
+/**
+ * Open an EventSource against the SSE stream and dispatch named events to the
+ * provided handlers. Returns a disposer that closes the connection.
+ */
+export function openSimulationStream(
+  simId: string,
+  handlers: StreamHandlers,
+): () => void {
+  const url = `${API_BASE}/api/simulate/${simId}/stream`;
+  const es = new EventSource(url);
+  let closed = false;
+
+  const close = () => {
+    if (!closed) {
+      closed = true;
+      es.close();
+    }
+  };
+
+  const parse = <T,>(raw: string): T | null => {
+    try {
+      return JSON.parse(raw) as T;
+    } catch {
+      return null;
+    }
+  };
+
+  es.addEventListener("status", (e) => {
+    const d = parse<StatusEvent>((e as MessageEvent).data);
+    if (d) handlers.onStatus?.(d);
+  });
+  es.addEventListener("persona", (e) => {
+    const d = parse<Persona>((e as MessageEvent).data);
+    if (d) handlers.onPersona?.(d);
+  });
+  es.addEventListener("timeline_event", (e) => {
+    const d = parse<TimelineEvent>((e as MessageEvent).data);
+    if (d) handlers.onTimelineEvent?.(d);
+  });
+  es.addEventListener("metric", (e) => {
+    const d = parse<MetricPoint>((e as MessageEvent).data);
+    if (d) handlers.onMetric?.(d);
+  });
+  es.addEventListener("branch_point", (e) => {
+    const d = parse<BranchPoint>((e as MessageEvent).data);
+    if (d) handlers.onBranchPoint?.(d);
+  });
+  es.addEventListener("credibility", (e) => {
+    const d = parse<CredibilityCard>((e as MessageEvent).data);
+    if (d) handlers.onCredibility?.(d);
+  });
+  es.addEventListener("recommendation", (e) => {
+    const d = parse<Recommendation>((e as MessageEvent).data);
+    if (d) handlers.onRecommendation?.(d);
+  });
+  es.addEventListener("done", (e) => {
+    const d = parse<{ sim_id: string }>((e as MessageEvent).data);
+    handlers.onDone?.(d ?? { sim_id: simId });
+    close();
+  });
+  es.addEventListener("error", (e) => {
+    // Named "error" event from the server carries JSON. The generic
+    // EventSource connection error has no data — surface a generic message.
+    const data = (e as MessageEvent).data;
+    if (typeof data === "string" && data.length) {
+      const d = parse<{ message: string }>(data);
+      handlers.onError?.(d?.message ?? "The simulation reported an error.");
+    } else {
+      handlers.onError?.(
+        "Lost connection to the simulation stream. The backend may be offline.",
+      );
+    }
+    close();
+  });
+
+  return close;
+}
