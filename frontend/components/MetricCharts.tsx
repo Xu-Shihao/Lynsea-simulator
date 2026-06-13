@@ -20,40 +20,34 @@ import {
   type MetricPoint,
 } from "../lib/types";
 
+/**
+ * The five REAL metric charts (0–100 A-vs-B line charts), styled to match the
+ * Stitch "Dimensional Trajectories" sidebar slot. Uses Recharts (not the static
+ * SVG placeholders from the Stitch HTML). Wires ALL five dimensions.
+ */
 export function MetricCharts({
   metrics,
-  options,
   branchPoints,
 }: {
   metrics: MetricPoint[];
-  options: [string, string];
   branchPoints: BranchPoint[];
 }) {
   if (!metrics.length) return null;
 
   return (
-    <section className="card p-5">
-      <div className="flex items-baseline justify-between mb-4 flex-wrap gap-2">
-        <h2 className="text-lg font-semibold text-[var(--ink)]">
-          Five life dimensions, over time
-        </h2>
-        <Legend options={options} />
-      </div>
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {METRIC_KEYS.map((key) => (
-          <MetricChart
-            key={key}
-            metricKey={key}
-            metrics={metrics}
-            branchPoints={branchPoints}
-          />
-        ))}
-      </div>
-      <p className="mt-3 text-xs text-[var(--muted)]">
-        Each line is a likely trajectory (0–100), not a guarantee. Vertical
-        markers flag months where the two futures diverge most.
-      </p>
-    </section>
+    <div className="flex flex-col gap-md">
+      <h4 className="font-label text-on-surface-variant uppercase tracking-wider text-xs">
+        Dimensional Trajectories
+      </h4>
+      {METRIC_KEYS.map((key) => (
+        <MetricChart
+          key={key}
+          metricKey={key}
+          metrics={metrics}
+          branchPoints={branchPoints}
+        />
+      ))}
+    </div>
   );
 }
 
@@ -69,59 +63,83 @@ function MetricChart({
   const rows = chartRows(metrics, metricKey);
   const relevantPoints = branchPoints.filter((bp) => bp.metric === metricKey);
 
+  // Final-month A vs B comparator for the corner indicator.
+  const last = rows.length ? rows[rows.length - 1] : null;
+  let lead: "A" | "B" | "tie" | null = null;
+  if (last && last.A != null && last.B != null) {
+    if (Math.round(last.A) > Math.round(last.B)) lead = "A";
+    else if (Math.round(last.B) > Math.round(last.A)) lead = "B";
+    else lead = "tie";
+  }
+
   return (
-    <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-3">
-      <div className="text-sm font-medium text-[var(--ink)] mb-2">
-        {METRIC_LABELS[metricKey]}
+    <div className="bg-surface-container rounded p-sm border border-outline-variant/30">
+      <div className="flex justify-between items-center mb-2">
+        <span className="font-caption text-caption text-on-surface">
+          {METRIC_LABELS[metricKey]}
+        </span>
+        {lead && lead !== "tie" && (
+          <span
+            className="text-[10px] font-semibold"
+            style={{ color: BRANCH_COLORS[lead] }}
+          >
+            {lead === "A" ? "A > B" : "B > A"}
+          </span>
+        )}
+        {lead === "tie" && (
+          <span className="text-[10px] text-on-surface-variant">A ≈ B</span>
+        )}
       </div>
-      <ResponsiveContainer width="100%" height={150}>
-        <LineChart
-          data={rows}
-          margin={{ top: 4, right: 8, bottom: 0, left: -22 }}
-        >
-          <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-          <XAxis
-            dataKey="month"
-            tickFormatter={(m) => `M${m}`}
-            tick={{ fontSize: 10, fill: "var(--muted)" }}
-            stroke="var(--border)"
-          />
-          <YAxis
-            domain={[0, 100]}
-            tick={{ fontSize: 10, fill: "var(--muted)" }}
-            stroke="var(--border)"
-            width={32}
-          />
-          <Tooltip content={<MetricTooltip />} />
-          {relevantPoints.map((bp, i) => (
-            <ReferenceLine
-              key={i}
-              x={bp.month}
-              stroke="var(--accent)"
-              strokeDasharray="4 3"
-              strokeOpacity={0.6}
+      <div className="h-20 bg-surface-variant/20 rounded border border-surface-variant overflow-hidden">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart
+            data={rows}
+            margin={{ top: 6, right: 6, bottom: 0, left: -28 }}
+          >
+            <CartesianGrid strokeDasharray="3 3" stroke="#1d253a" />
+            <XAxis
+              dataKey="month"
+              tickFormatter={(m) => `M${m}`}
+              tick={{ fontSize: 9, fill: "#6d758e" }}
+              stroke="#1d253a"
             />
-          ))}
-          <Line
-            type="monotone"
-            dataKey="A"
-            stroke={BRANCH_COLORS.A}
-            strokeWidth={2.4}
-            dot={{ r: 2.5 }}
-            connectNulls
-            isAnimationActive={false}
-          />
-          <Line
-            type="monotone"
-            dataKey="B"
-            stroke={BRANCH_COLORS.B}
-            strokeWidth={2.4}
-            dot={{ r: 2.5 }}
-            connectNulls
-            isAnimationActive={false}
-          />
-        </LineChart>
-      </ResponsiveContainer>
+            <YAxis
+              domain={[0, 100]}
+              tick={{ fontSize: 9, fill: "#6d758e" }}
+              stroke="#1d253a"
+              width={30}
+            />
+            <Tooltip content={<MetricTooltip />} />
+            {relevantPoints.map((bp, i) => (
+              <ReferenceLine
+                key={i}
+                x={bp.month}
+                stroke="#F472B6"
+                strokeDasharray="4 3"
+                strokeOpacity={0.7}
+              />
+            ))}
+            <Line
+              type="monotone"
+              dataKey="A"
+              stroke={BRANCH_COLORS.A}
+              strokeWidth={2}
+              dot={{ r: 2 }}
+              connectNulls
+              isAnimationActive={false}
+            />
+            <Line
+              type="monotone"
+              dataKey="B"
+              stroke={BRANCH_COLORS.B}
+              strokeWidth={2}
+              dot={{ r: 2 }}
+              connectNulls
+              isAnimationActive={false}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   );
 }
@@ -142,8 +160,8 @@ function MetricTooltip({
 }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2.5 py-1.5 text-xs shadow-md">
-      <div className="font-medium text-[var(--ink)] mb-0.5">Month {label}</div>
+    <div className="rounded-lg border border-surface-variant bg-surface-container-high px-2.5 py-1.5 text-xs shadow-md">
+      <div className="font-medium text-on-surface mb-0.5">Month {label}</div>
       {payload.map((p) => (
         <div
           key={String(p.dataKey)}
@@ -156,33 +174,6 @@ function MetricTooltip({
           </span>
         </div>
       ))}
-    </div>
-  );
-}
-
-function Legend({ options }: { options: [string, string] }) {
-  return (
-    <div className="flex items-center gap-4 text-xs">
-      <span className="flex items-center gap-1.5">
-        <span
-          className="inline-block h-2.5 w-5 rounded-full"
-          style={{ background: BRANCH_COLORS.A }}
-        />
-        <span className="branch-a-text font-medium">A</span>
-        <span className="text-[var(--muted)] max-w-[140px] truncate">
-          {options[0]}
-        </span>
-      </span>
-      <span className="flex items-center gap-1.5">
-        <span
-          className="inline-block h-2.5 w-5 rounded-full"
-          style={{ background: BRANCH_COLORS.B }}
-        />
-        <span className="branch-b-text font-medium">B</span>
-        <span className="text-[var(--muted)] max-w-[140px] truncate">
-          {options[1]}
-        </span>
-      </span>
     </div>
   );
 }

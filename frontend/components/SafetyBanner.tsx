@@ -1,40 +1,38 @@
 "use client";
 
+import { Icon } from "./Brand";
+
 export function SafetyBanner({ highRisk }: { highRisk: boolean }) {
   if (!highRisk) {
     // Always-present, low-key reminder.
     return (
-      <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-2)] px-4 py-2.5 text-xs text-[var(--muted)]">
+      <div className="rounded-lg border border-surface-variant bg-surface-container px-4 py-2.5 text-xs text-on-surface-variant">
         These are simulated probabilities, not predictions. Phrasing like
-        &ldquo;likely&rdquo; and &ldquo;~60%&rdquo; is intentional — the future
-        stays yours to write.
+        “likely” and “~60%” is intentional — the future stays yours to write.
       </div>
     );
   }
 
   return (
-    <div className="rounded-xl border-2 border-[var(--warn)]/40 bg-[var(--warn)]/[0.06] px-4 py-3.5">
+    <div className="rounded-lg border-2 border-warn/40 bg-warn/[0.06] px-4 py-3.5">
       <div className="flex items-start gap-3">
-        <span
-          className="mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--warn)]/15 text-[var(--warn)]"
-          aria-hidden
-        >
-          ⚠
+        <span className="mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-warn/15 text-warn">
+          <Icon name="warning" className="text-[18px]" fill />
         </span>
         <div>
-          <div className="font-semibold text-[var(--ink)]">
+          <div className="font-title text-on-surface font-semibold">
             This is a simulation, not a prophecy.
           </div>
-          <p className="mt-1 text-sm text-[var(--foreground)] leading-relaxed">
-            One or more paths show a sharp dip in a life dimension. Treat this
-            as a &ldquo;what could happen&rdquo; warning, not a verdict. The
-            biggest levers are usually yours.
+          <p className="mt-1 text-sm text-on-surface leading-relaxed">
+            One or more paths show a sharp dip in a life dimension. Treat this as
+            a “what could happen” warning, not a verdict. The biggest levers are
+            usually yours.
           </p>
-          <div className="mt-2 rounded-lg bg-[var(--surface)] border border-[var(--border)] px-3 py-2 text-xs text-[var(--muted)]">
-            <span className="font-medium text-[var(--ink)]">
+          <div className="mt-2 rounded-lg bg-surface-container border border-surface-variant px-3 py-2 text-xs text-on-surface-variant">
+            <span className="font-medium text-on-surface">
               How to change this outcome:
             </span>{" "}
-            look at the divergence months below — small early choices
+            look at the divergence months in the timeline — small early choices
             (boundaries, conversations, timing) tend to bend these curves the
             most.
           </div>

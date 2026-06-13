@@ -10,6 +10,7 @@ import {
   type Persona,
   type TimelineEvent,
 } from "../lib/types";
+import { Icon } from "./Brand";
 
 export function EventDetail({
   event,
@@ -46,7 +47,6 @@ export function EventDetail({
     (id) => !personas.some((p) => p.id === id),
   );
 
-  // Which metrics list this event as a supporting cause?
   const supportedMetrics: { key: MetricKey; month: number; value: number }[] =
     [];
   for (const m of metrics) {
@@ -69,47 +69,47 @@ export function EventDetail({
         type="button"
         aria-label="Close detail"
         onClick={onClose}
-        className="absolute inset-0 bg-black/30 backdrop-blur-[2px]"
+        className="absolute inset-0 bg-black/50 backdrop-blur-[2px]"
       />
-      <aside className="relative h-full w-full max-w-md bg-[var(--surface)] shadow-2xl overflow-y-auto animate-in">
-        <div className="sticky top-0 bg-[var(--surface)] border-b border-[var(--border)] px-5 py-3 flex items-start gap-3">
+      <aside className="relative h-full w-full max-w-md bg-surface-container border-l border-surface-variant shadow-2xl overflow-y-auto animate-in">
+        <div className="sticky top-0 bg-surface-container border-b border-surface-variant px-5 py-3 flex items-start gap-3 z-10">
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1 flex-wrap">
-              <span
-                className="inline-flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold text-white"
-                style={{ background: BRANCH_COLORS[event.branch] }}
-              >
-                {event.branch}
-              </span>
-              <span className="text-xs text-[var(--muted)]">
-                Month {event.month} · {branchLabel}
+              {!event.is_shared_exogenous && (
+                <span
+                  className="inline-flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold text-surface"
+                  style={{ background: BRANCH_COLORS[event.branch] }}
+                >
+                  {event.branch}
+                </span>
+              )}
+              <span className="text-xs text-on-surface-variant">
+                Month {event.month} ·{" "}
+                {event.is_shared_exogenous ? "Both branches" : branchLabel}
               </span>
               {event.is_shared_exogenous && (
-                <span
-                  className="text-[10px] font-semibold rounded px-1.5 py-0.5"
-                  style={{ background: "#f3e8ff", color: SHARED_COLOR }}
-                >
-                  ⟂ Shared external event
+                <span className="inline-flex items-center gap-1 text-[10px] font-semibold rounded px-1.5 py-0.5 bg-surface-variant text-on-surface-variant">
+                  <Icon name="link" className="text-[12px]" /> Shared event
                 </span>
               )}
             </div>
-            <h3 className="text-base font-semibold text-[var(--ink)] leading-snug">
+            <h3 className="font-title text-on-surface leading-snug">
               {event.title}
             </h3>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="text-[var(--muted)] hover:text-[var(--ink)] text-xl leading-none focus-ring rounded px-1"
+            className="text-on-surface-variant hover:text-on-surface focus-ring rounded px-1"
             aria-label="Close"
           >
-            ×
+            <Icon name="close" />
           </button>
         </div>
 
         <div className="px-5 py-4 space-y-5">
           <Section title="What happens">
-            <p className="text-sm text-[var(--foreground)] leading-relaxed">
+            <p className="text-sm text-on-surface leading-relaxed">
               {event.description}
             </p>
           </Section>
@@ -117,13 +117,13 @@ export function EventDetail({
           <Section title="Why we think so (evidence)">
             {event.evidence ? (
               <p
-                className="text-sm leading-relaxed rounded-lg border-l-2 pl-3 py-1 text-[var(--foreground)]"
+                className="text-sm leading-relaxed border-l-2 pl-3 py-1 text-on-surface"
                 style={{ borderColor: accent }}
               >
                 {event.evidence}
               </p>
             ) : (
-              <p className="text-sm text-[var(--muted)] italic">
+              <p className="text-sm text-on-surface-variant italic">
                 No specific supporting detail — treat this as a plausible,
                 directional beat rather than a strong claim.
               </p>
@@ -134,19 +134,25 @@ export function EventDetail({
             {involved.length || involvedFallback.length ? (
               <div className="flex flex-wrap gap-1.5">
                 {involved.map((p) => (
-                  <span key={p.id} className="chip">
+                  <span
+                    key={p.id}
+                    className="inline-flex items-center gap-1 rounded-full bg-surface-container-high px-2.5 py-1 text-xs text-on-surface"
+                  >
                     {p.name}
-                    <span className="text-[var(--muted)]">· {p.role}</span>
+                    <span className="text-on-surface-variant">· {p.role}</span>
                   </span>
                 ))}
                 {involvedFallback.map((id) => (
-                  <span key={id} className="chip text-[var(--muted)]">
+                  <span
+                    key={id}
+                    className="inline-flex items-center rounded-full bg-surface-container-high px-2.5 py-1 text-xs text-on-surface-variant"
+                  >
                     {id}
                   </span>
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-[var(--muted)]">Just you.</p>
+              <p className="text-sm text-on-surface-variant">Just you.</p>
             )}
           </Section>
 
@@ -156,14 +162,16 @@ export function EventDetail({
                 {supportedMetrics.map((m) => (
                   <div
                     key={m.key}
-                    className="rounded-lg border border-[var(--border)] px-2.5 py-1.5"
+                    className="rounded-lg border border-surface-variant bg-surface-container-low px-2.5 py-1.5"
                   >
-                    <div className="text-[11px] text-[var(--muted)]">
+                    <div className="text-[11px] text-on-surface-variant">
                       {METRIC_LABELS[m.key]}
                     </div>
-                    <div className="text-sm font-medium tabular-nums text-[var(--ink)]">
+                    <div className="text-sm font-medium tabular-nums text-on-surface">
                       ~{Math.round(m.value)}
-                      <span className="text-[var(--muted)] text-xs">/100</span>
+                      <span className="text-on-surface-variant text-xs">
+                        /100
+                      </span>
                     </div>
                   </div>
                 ))}
@@ -185,7 +193,7 @@ function Section({
 }) {
   return (
     <div>
-      <h4 className="text-xs font-semibold uppercase tracking-wide text-[var(--muted)] mb-1.5">
+      <h4 className="text-xs font-semibold uppercase tracking-wide text-outline mb-1.5">
         {title}
       </h4>
       {children}

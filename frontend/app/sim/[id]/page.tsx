@@ -45,7 +45,7 @@ function SimResults({ id }: { id: string }) {
 
 function LoadingFallback() {
   return (
-    <main className="flex-1 grid place-items-center text-sm text-[var(--muted)]">
+    <main className="flex-1 grid place-items-center text-sm text-on-surface-variant">
       Loading simulation…
     </main>
   );

@@ -2,53 +2,59 @@
 
 import { BRANCH_COLORS } from "../lib/theme";
 import type { Recommendation } from "../lib/types";
+import { Icon } from "./Brand";
 
+/**
+ * Footer recommendation strip content. Probabilistic copy (e.g. "Leans B —
+ * around a 60% chance…"), the value rationale, and the guardrail line. For
+ * high-risk results the prominent "This is a simulation, not a prophecy"
+ * guardrail (FE-24/25) is shown.
+ */
 export function RecommendationCard({
   recommendation,
   options,
+  highRisk = false,
 }: {
   recommendation: Recommendation;
   options: [string, string];
+  highRisk?: boolean;
 }) {
   const fav = recommendation.favored_branch;
   const isTie = fav === "tie";
-  const color = isTie ? "var(--accent)" : BRANCH_COLORS[fav];
-  const favLabel = isTie
-    ? "Roughly even"
-    : fav === "A"
-      ? options[0]
-      : options[1];
+  const color = isTie ? "var(--primary)" : BRANCH_COLORS[fav];
+  const icon = isTie ? "balance" : "trending_up";
 
   return (
-    <section
-      className="card p-5 border-l-4"
-      style={{ borderLeftColor: color }}
-    >
-      <div className="flex items-center gap-2 mb-2 flex-wrap">
-        <h2 className="text-lg font-semibold text-[var(--ink)]">
-          Lynsea&apos;s read
-        </h2>
-        <span
-          className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium text-white"
-          style={{ background: color }}
-        >
+    <div>
+      <div className="flex items-center gap-sm mb-xs">
+        <Icon name={icon} style={{ color }} />
+        <span className="font-label font-bold text-on-surface">
           {isTie ? (
-            "Leans even"
+            "Roughly even — both branches score similarly for you."
           ) : (
             <>
-              <span className="font-bold">{fav}</span>
-              <span className="max-w-[180px] truncate">· {favLabel}</span>
+              Leans {fav}{" "}
+              <span className="text-on-surface-variant font-medium">
+                ({fav === "A" ? options[0] : options[1]})
+              </span>
             </>
           )}
         </span>
       </div>
-      <p className="text-sm text-[var(--foreground)] leading-relaxed">
+      <p className="font-caption text-caption text-on-surface-variant leading-relaxed max-w-2xl">
         {recommendation.text}
       </p>
-      <p className="mt-3 text-[11px] text-[var(--muted)]">
-        This is a probabilistic lean from a simulation — a prompt for your own
-        reflection, not advice to follow.
-      </p>
-    </section>
+      {highRisk ? (
+        <p className="font-caption text-caption text-warn mt-1 text-[10px] uppercase tracking-wide font-semibold">
+          This is a simulation, not a prophecy — one or more paths show a sharp
+          dip. Treat it as a “what could happen” warning, not a verdict.
+        </p>
+      ) : (
+        <p className="font-caption text-outline mt-1 text-[10px] uppercase tracking-wide">
+          This is a simulation, not a prediction — change any assumption and
+          re-run.
+        </p>
+      )}
+    </div>
   );
 }

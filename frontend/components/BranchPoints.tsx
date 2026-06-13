@@ -23,15 +23,14 @@ export function BranchPoints({
   if (!branchPoints.length && !deltas.length) return null;
 
   return (
-    <section className="card p-5">
-      <h2 className="text-lg font-semibold text-[var(--ink)] mb-1">
+    <section className="bg-surface-container border border-surface-variant rounded-lg p-md">
+      <h2 className="font-title text-title text-on-surface mb-1">
         Where the futures diverge
       </h2>
-      <p className="text-xs text-[var(--muted)] mb-4">
+      <p className="text-xs text-on-surface-variant mb-4">
         The moments and dimensions that drive the gap between the two paths.
       </p>
 
-      {/* Final-month gap summary */}
       {deltas.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-5">
           {deltas.map((d) => (
@@ -40,7 +39,6 @@ export function BranchPoints({
         </div>
       )}
 
-      {/* Branch point narratives */}
       <div className="space-y-3">
         {branchPoints
           .slice()
@@ -48,24 +46,24 @@ export function BranchPoints({
           .map((bp, i) => (
             <div
               key={i}
-              className="rounded-xl border border-[var(--border)] p-3.5"
+              className="rounded-lg border border-surface-variant bg-surface-container-low p-3.5 border-l-2 border-l-brand-magenta"
             >
               <div className="flex items-center gap-2 mb-1 flex-wrap">
-                <span className="inline-flex items-center gap-1 rounded-md bg-[var(--accent)]/10 px-2 py-0.5 text-[11px] font-medium text-[var(--accent)]">
+                <span className="inline-flex items-center gap-1 rounded-md bg-brand-magenta/15 px-2 py-0.5 text-[11px] font-medium text-brand-magenta">
                   Month {bp.month}
                 </span>
-                <span className="text-[11px] rounded-md bg-[var(--surface-2)] px-2 py-0.5 text-[var(--muted)]">
+                <span className="text-[11px] rounded-md bg-surface-variant px-2 py-0.5 text-on-surface-variant">
                   {METRIC_LABELS[bp.metric as MetricKey] ?? bp.metric}
                 </span>
-                <span className="text-[11px] text-[var(--muted)]">
+                <span className="text-[11px] text-on-surface-variant">
                   ~{Math.round(bp.magnitude)}-point gap
                 </span>
               </div>
-              <p className="text-sm text-[var(--foreground)] leading-relaxed">
+              <p className="text-sm text-on-surface leading-relaxed">
                 {bp.description}
               </p>
-              <div className="mt-2 flex items-start gap-1.5 text-xs text-[var(--muted)]">
-                <span className="font-medium text-[var(--ink)]">
+              <div className="mt-2 flex items-start gap-1.5 text-xs text-on-surface-variant">
+                <span className="font-medium text-on-surface">
                   Cause chain:
                 </span>
                 <span>{bp.cause_chain}</span>
@@ -74,7 +72,7 @@ export function BranchPoints({
           ))}
       </div>
 
-      <p className="mt-3 text-[11px] text-[var(--muted)]">
+      <p className="mt-3 text-[11px] text-on-surface-variant">
         A = {options[0]} · B = {options[1]}. Gaps show A minus B at the final
         modeled month.
       </p>
@@ -93,13 +91,13 @@ function GapTile({
   const favorsA = rounded > 0;
   const neutral = rounded === 0;
   const color = neutral
-    ? "var(--muted)"
+    ? "var(--on-surface-variant)"
     : favorsA
       ? BRANCH_COLORS.A
       : BRANCH_COLORS.B;
   return (
-    <div className="rounded-lg border border-[var(--border)] p-2.5 text-center">
-      <div className="text-[11px] text-[var(--muted)] mb-0.5">
+    <div className="rounded-lg border border-surface-variant bg-surface-container-low p-2.5 text-center">
+      <div className="text-[11px] text-on-surface-variant mb-0.5">
         {METRIC_LABELS[metricKey]}
       </div>
       <div className="text-lg font-semibold tabular-nums" style={{ color }}>

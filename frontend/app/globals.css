@@ -1,119 +1,276 @@
 @import "tailwindcss";
 
 /*
-  Lynsea design system.
-  Calm, confident palette. Consistent A/B branch color coding used across
-  personas, timelines, and charts:
-    Branch A (options[0]) -> teal
-    Branch B (options[1]) -> amber
+  Lynsea — Stitch design system (Tailwind v4).
+  The Stitch HTML used a v3 `tailwind.config` with custom colors/fonts/spacing.
+  Those tokens are translated here into CSS variables + a `@theme` block so the
+  same utility classes work (e.g. `bg-surface-container`, `text-on-surface-variant`,
+  `font-display`, `text-headline`, `rounded-xl`, `p-lg`, etc.).
+
+  Consistent A/B branch color coding across personas, timelines, charts, scores:
+    Branch A (options[0]) -> brand-cyan   #22D3EE
+    Branch B (options[1]) -> brand-amber  #FBBF24
+    what-if / Branch C    -> brand-magenta #F472B6
+    shared exogenous      -> neutral slate, dashed border
 */
 
 :root {
-  --background: #f7f8fa;
-  --surface: #ffffff;
-  --surface-2: #f2f4f7;
-  --foreground: #16202b;
-  --muted: #5b6675;
-  --border: #e3e7ee;
+  /* Navy canvas + grid line color */
+  --color-navy: #0b0f1a;
+  --grid-line: #1f2738;
 
-  --ink: #16202b;
-  --accent: #3b6ef5; /* primary brand blue */
+  /* Surfaces */
+  --surface: #0a0e19;
+  --surface-dim: #0a0e19;
+  --surface-bright: #232b43;
+  --surface-container-lowest: #000000;
+  --surface-container-low: #0e1320;
+  --surface-container: #131929;
+  --surface-container-high: #181f31;
+  --surface-container-highest: #1d253a;
+  --surface-variant: #1d253a;
 
-  /* Branch A — teal */
-  --branch-a: #0d9488;
-  --branch-a-soft: #ccfbf1;
-  --branch-a-ring: rgba(13, 148, 136, 0.18);
+  /* Foreground / text */
+  --on-surface: #dee5ff;
+  --on-surface-variant: #a3aac5;
+  --on-background: #dee5ff;
+  --outline: #6d758e;
+  --outline-variant: #40475e;
 
-  /* Branch B — amber */
-  --branch-b: #d97706;
-  --branch-b-soft: #fef3c7;
-  --branch-b-ring: rgba(217, 119, 6, 0.18);
+  /* Primary (indigo) */
+  --primary: #9f92ff;
+  --primary-dim: #9d8fff;
+  --primary-fixed: #c2b9ff;
+  --primary-fixed-dim: #b3a9ff;
+  --primary-container: #9182fd;
+  --on-primary: #1f0078;
+  --on-primary-fixed: #230086;
+  --on-primary-fixed-variant: #422ea8;
+  --on-primary-container: #11004e;
 
-  --shared: #7c3aed; /* shared exogenous events — violet */
+  /* Secondary (cyan-ish) */
+  --secondary: #2fd9f4;
+  --secondary-dim: #00cbe6;
+  --secondary-container: #002a31;
+  --on-secondary-container: #00b4cc;
 
-  --good: #16a34a;
-  --warn: #d97706;
-  --bad: #dc2626;
+  /* Tertiary (gold) */
+  --tertiary: #ffd16f;
+  --tertiary-container: #fcc025;
+  --tertiary-dim: #edb210;
+
+  /* Error */
+  --error: #fd6f85;
+  --error-dim: #c8475d;
+  --error-container: #8a1632;
+  --on-error-container: #ff97a3;
+
+  /* Brand / branch colors */
+  --brand-cyan: #22d3ee;
+  --brand-amber: #fbbf24;
+  --brand-magenta: #f472b6;
+  --brand-navy: #0b0f1a;
+
+  /* Status helpers (qualitative) */
+  --good: #34d399;
+  --warn: #fbbf24;
+  --bad: #fd6f85;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-surface: var(--surface);
-  --color-surface-2: var(--surface-2);
-  --color-foreground: var(--foreground);
-  --color-muted: var(--muted);
-  --color-border: var(--border);
-  --color-accent: var(--accent);
-  --color-branch-a: var(--branch-a);
-  --color-branch-b: var(--branch-b);
-  --color-shared: var(--shared);
-  --color-good: var(--good);
-  --color-warn: var(--warn);
-  --color-bad: var(--bad);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+@theme {
+  /* ---- Colors ---- */
+  --color-navy: #0b0f1a;
+  --color-background: #0a0e19;
+  --color-surface: #0a0e19;
+  --color-surface-dim: #0a0e19;
+  --color-surface-bright: #232b43;
+  --color-surface-container-lowest: #000000;
+  --color-surface-container-low: #0e1320;
+  --color-surface-container: #131929;
+  --color-surface-container-high: #181f31;
+  --color-surface-container-highest: #1d253a;
+  --color-surface-variant: #1d253a;
+
+  --color-on-surface: #dee5ff;
+  --color-on-surface-variant: #a3aac5;
+  --color-on-background: #dee5ff;
+  --color-outline: #6d758e;
+  --color-outline-variant: #40475e;
+  --color-inverse-surface: #faf8ff;
+  --color-inverse-on-surface: #515562;
+
+  --color-primary: #9f92ff;
+  --color-primary-dim: #9d8fff;
+  --color-primary-fixed: #c2b9ff;
+  --color-primary-fixed-dim: #b3a9ff;
+  --color-primary-container: #9182fd;
+  --color-on-primary: #1f0078;
+  --color-on-primary-fixed: #230086;
+  --color-on-primary-fixed-variant: #422ea8;
+  --color-on-primary-container: #11004e;
+  --color-surface-tint: #9f92ff;
+  --color-inverse-primary: #5c4cc4;
+
+  --color-secondary: #2fd9f4;
+  --color-secondary-dim: #00cbe6;
+  --color-secondary-fixed: #a2eeff;
+  --color-secondary-fixed-dim: #5de6ff;
+  --color-secondary-container: #002a31;
+  --color-on-secondary: #004752;
+  --color-on-secondary-container: #00b4cc;
+  --color-on-secondary-fixed: #004651;
+  --color-on-secondary-fixed-variant: #006573;
+
+  --color-tertiary: #ffd16f;
+  --color-tertiary-container: #fcc025;
+  --color-tertiary-fixed: #fcc025;
+  --color-tertiary-fixed-dim: #edb210;
+  --color-tertiary-dim: #edb210;
+  --color-on-tertiary: #614700;
+  --color-on-tertiary-container: #563e00;
+  --color-on-tertiary-fixed: #3d2b00;
+  --color-on-tertiary-fixed-variant: #614700;
+
+  --color-error: #fd6f85;
+  --color-error-dim: #c8475d;
+  --color-error-container: #8a1632;
+  --color-on-error: #490013;
+  --color-on-error-container: #ff97a3;
+
+  /* Brand / branch */
+  --color-brand-cyan: #22d3ee;
+  --color-brand-amber: #fbbf24;
+  --color-brand-magenta: #f472b6;
+  --color-brand-navy: #0b0f1a;
+
+  --color-good: #34d399;
+  --color-warn: #fbbf24;
+  --color-bad: #fd6f85;
+
+  /* ---- Fonts ---- */
+  --font-display: var(--font-space-grotesk), "Space Grotesk", sans-serif;
+  --font-headline: var(--font-space-grotesk), "Space Grotesk", sans-serif;
+  --font-title: var(--font-space-grotesk), "Space Grotesk", sans-serif;
+  --font-body: var(--font-inter), "Inter", sans-serif;
+  --font-label: var(--font-inter), "Inter", sans-serif;
+  --font-caption: var(--font-inter), "Inter", sans-serif;
+  --font-data-numeric: var(--font-inter), "Inter", sans-serif;
+  --font-sans: var(--font-inter), "Inter", sans-serif;
+
+  /* ---- Font sizes (with line-height) translated from Stitch fontSize ---- */
+  --text-display: 40px;
+  --text-display--line-height: 48px;
+  --text-display--letter-spacing: -0.02em;
+  --text-display--font-weight: 700;
+
+  --text-headline: 28px;
+  --text-headline--line-height: 36px;
+  --text-headline--font-weight: 600;
+
+  --text-title: 20px;
+  --text-title--line-height: 28px;
+  --text-title--font-weight: 500;
+
+  --text-body: 16px;
+  --text-body--line-height: 24px;
+  --text-body--font-weight: 400;
+
+  --text-label: 14px;
+  --text-label--line-height: 20px;
+  --text-label--font-weight: 500;
+
+  --text-data-numeric: 14px;
+  --text-data-numeric--line-height: 20px;
+  --text-data-numeric--letter-spacing: 0.05em;
+  --text-data-numeric--font-weight: 600;
+
+  --text-caption: 12px;
+  --text-caption--line-height: 16px;
+  --text-caption--font-weight: 400;
+
+  /* ---- Spacing (Stitch custom spacing scale) ---- */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 40px;
+  --spacing-unit: 4px;
+  --spacing-margin: 32px;
+  --spacing-gutter: 24px;
+
+  /* ---- Border radius ---- */
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
 }
 
-* {
-  border-color: var(--border);
-}
+/* Note: the `--spacing-*` tokens in `@theme` above feed Tailwind v4's entire
+   dynamic spacing scale, so `p-lg`, `px-xl`, `gap-md`, `w-sm`, `space-y-md`,
+   `ml-xl`, etc. all resolve to the Stitch values automatically — no manual
+   utility layer is required. */
 
 html {
   scroll-behavior: smooth;
 }
 
+/* Navy grid background — recreated from the Stitch <style> block. */
 body {
-  background:
-    radial-gradient(
-      1200px 600px at 100% -10%,
-      rgba(59, 110, 245, 0.06),
-      transparent 60%
-    ),
-    radial-gradient(
-      900px 500px at -10% 0%,
-      rgba(13, 148, 136, 0.05),
-      transparent 55%
-    ),
-    var(--background);
+  background-color: var(--color-navy);
+  background-image:
+    linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+  background-size: 40px 40px;
   background-attachment: fixed;
-  color: var(--foreground);
-  font-family: var(--font-sans), ui-sans-serif, system-ui, -apple-system,
-    "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color: var(--on-surface);
+  font-family: var(--font-inter), "Inter", ui-sans-serif, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
-/* Utility classes used across the app */
-.card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  box-shadow:
-    0 1px 2px rgba(16, 24, 40, 0.04),
-    0 8px 24px -16px rgba(16, 24, 40, 0.18);
+/* Material Symbols base styling */
+.material-symbols-outlined {
+  font-variation-settings:
+    "FILL" 0,
+    "wght" 400,
+    "GRAD" 0,
+    "opsz" 24;
+  font-feature-settings: "liga";
+  vertical-align: middle;
+  user-select: none;
 }
 
-.chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  border-radius: 9999px;
-  border: 1px solid var(--border);
-  background: var(--surface-2);
-  padding: 0.25rem 0.6rem;
-  font-size: 0.8rem;
-  line-height: 1.1;
+/* ---- Glow effects (from both Stitch <style> blocks) ---- */
+.glow-cyan {
+  box-shadow: 0 0 15px rgba(34, 211, 238, 0.2);
+}
+.glow-amber {
+  box-shadow: 0 0 15px rgba(251, 191, 36, 0.2);
+}
+.glow-magenta {
+  box-shadow: 0 0 15px rgba(244, 114, 182, 0.4);
+}
+.glow-border {
+  box-shadow: 0 0 12px 0 rgba(159, 146, 255, 0.15);
+}
+.glow-border:focus-within {
+  box-shadow: 0 0 20px 0 rgba(159, 146, 255, 0.3);
 }
 
-.branch-a-text {
-  color: var(--branch-a);
+/* ---- Pulse keyframe (streaming dot) ---- */
+.pulse-dot {
+  animation: pulse 2s infinite;
 }
-.branch-b-text {
-  color: var(--branch-b);
-}
-
-.focus-ring:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
+@keyframes pulse {
+  0% {
+    opacity: 0.5;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+  100% {
+    opacity: 0.5;
+    transform: scale(0.8);
+  }
 }
 
 /* Subtle entrance for streamed items */
@@ -131,31 +288,52 @@ body {
   animation: lynsea-in 0.35s ease-out both;
 }
 
-/* Range slider styling for value weights */
+/* Custom scrollbar for the dark theme (from Stitch dashboard) */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #0b0f1a;
+}
+::-webkit-scrollbar-thumb {
+  background: #1d253a;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #40475e;
+}
+
+.focus-ring:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* Range slider styling for value weights (Stitch primary accent). */
 input[type="range"].lynsea-range {
   -webkit-appearance: none;
   appearance: none;
   height: 6px;
   border-radius: 9999px;
-  background: var(--surface-2);
+  background: var(--surface-container-high);
   outline: none;
 }
 input[type="range"].lynsea-range::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   border-radius: 9999px;
-  background: var(--accent);
-  border: 2px solid #fff;
-  box-shadow: 0 1px 4px rgba(16, 24, 40, 0.25);
+  background: var(--primary);
+  border: 2px solid var(--surface-container);
+  box-shadow: 0 0 8px rgba(159, 146, 255, 0.5);
   cursor: pointer;
 }
 input[type="range"].lynsea-range::-moz-range-thumb {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   border-radius: 9999px;
-  background: var(--accent);
-  border: 2px solid #fff;
+  background: var(--primary);
+  border: 2px solid var(--surface-container);
   cursor: pointer;
 }

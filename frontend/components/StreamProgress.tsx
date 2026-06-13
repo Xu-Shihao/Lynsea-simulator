@@ -27,25 +27,22 @@ export function StreamProgress({
     : 0;
 
   return (
-    <div className="card p-4">
+    <div className="bg-surface-container border border-surface-variant rounded-lg p-md">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
-          <span className="relative flex h-2.5 w-2.5">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--accent)]/50" />
-            <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[var(--accent)]" />
-          </span>
-          <span className="text-sm font-medium text-[var(--ink)]">
+          <span className="w-2.5 h-2.5 rounded-full bg-primary pulse-dot" />
+          <span className="font-label text-sm text-on-surface">
             {status?.message ?? "Connecting to the simulator…"}
           </span>
         </div>
-        <span className="text-xs tabular-nums text-[var(--muted)]">
+        <span className="text-xs tabular-nums text-on-surface-variant">
           {progress}%
         </span>
       </div>
 
-      <div className="h-2 rounded-full bg-[var(--surface-2)] overflow-hidden">
+      <div className="h-2 rounded-full bg-surface-container-high overflow-hidden">
         <div
-          className="h-full rounded-full bg-[var(--accent)] transition-all duration-500"
+          className="h-full rounded-full bg-primary transition-all duration-500"
           style={{ width: `${progress}%` }}
         />
       </div>
@@ -59,10 +56,10 @@ export function StreamProgress({
               key={p.id}
               className={`text-[10px] rounded-full px-2 py-0.5 border ${
                 state === "active"
-                  ? "border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--accent)] font-medium"
+                  ? "border-primary bg-primary/10 text-primary font-medium"
                   : state === "done"
-                    ? "border-[var(--good)]/30 bg-[var(--good)]/10 text-[var(--good)]"
-                    : "border-[var(--border)] text-[var(--muted)]"
+                    ? "border-good/40 bg-good/10 text-good"
+                    : "border-surface-variant text-on-surface-variant"
               }`}
             >
               {state === "done" ? "✓ " : ""}
@@ -71,7 +68,7 @@ export function StreamProgress({
           );
         })}
       </div>
-      <p className="mt-2 text-[11px] text-[var(--muted)]">
+      <p className="mt-2 text-[11px] text-on-surface-variant">
         Results stream in as they&apos;re generated — milestones first, then the
         details that fill in each future.
       </p>

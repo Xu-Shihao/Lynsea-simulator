@@ -2,51 +2,49 @@
 
 import { credibilityBand } from "../lib/theme";
 import type { CredibilityCard } from "../lib/types";
+import { Icon } from "./Brand";
 
+/**
+ * Simulation Credibility card (FE-23 uncertainty). Matches the Stitch sidebar
+ * card: overall score, the three sub-scores as bars (data_sufficiency,
+ * causal_confidence, event_plausibility), the notes, and the
+ * "directional only; personas built from limited input" caveat.
+ */
 export function CredibilityPanel({ card }: { card: CredibilityCard }) {
+  const overall = Math.round(card.overall * 100);
   const band = credibilityBand(card.overall);
+
   return (
-    <section className="card p-5">
-      <div className="flex items-start justify-between gap-3 mb-4">
-        <div>
-          <h2 className="text-lg font-semibold text-[var(--ink)]">
-            How much to trust this
-          </h2>
-          <p className="text-xs text-[var(--muted)] mt-0.5">
-            A self-assessed confidence read — not a guarantee of any single
-            outcome.
-          </p>
-        </div>
-        <div className="text-right">
-          <div
-            className="text-2xl font-semibold tabular-nums"
-            style={{ color: band.color }}
-          >
-            {Math.round(card.overall * 100)}%
-          </div>
-          <div
-            className="text-[11px] font-medium"
-            style={{ color: band.color }}
-          >
-            {band.label}
-          </div>
-        </div>
+    <div className="bg-surface-container rounded-lg p-md border border-surface-variant">
+      <div className="flex items-center gap-sm mb-sm">
+        <Icon name="fact_check" className="text-outline" />
+        <h4 className="font-label text-on-surface">Simulation Credibility</h4>
+        <span className="ml-auto font-data-numeric text-data-numeric text-on-surface">
+          {overall}/100
+        </span>
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-2 mb-sm">
         <ScoreBar label="Data sufficiency" value={card.data_sufficiency} />
         <ScoreBar label="Causal confidence" value={card.causal_confidence} />
         <ScoreBar label="Event plausibility" value={card.event_plausibility} />
       </div>
 
+      <div
+        className="text-[11px] font-medium mb-2"
+        style={{ color: band.color }}
+      >
+        {band.label}
+      </div>
+
       {card.notes.length > 0 && (
-        <ul className="mt-4 space-y-1.5">
+        <ul className="space-y-1 mb-2">
           {card.notes.map((n, i) => (
             <li
               key={i}
-              className="flex gap-2 text-xs text-[var(--muted)] leading-relaxed"
+              className="flex gap-1.5 text-[10px] text-on-surface-variant leading-relaxed"
             >
-              <span className="text-[var(--accent)]" aria-hidden>
+              <span className="text-primary" aria-hidden>
                 •
               </span>
               <span>{n}</span>
@@ -54,24 +52,24 @@ export function CredibilityPanel({ card }: { card: CredibilityCard }) {
           ))}
         </ul>
       )}
-    </section>
+
+      <p className="text-[10px] text-outline italic">
+        Directional only; personas built from limited input.
+      </p>
+    </div>
   );
 }
 
 function ScoreBar({ label, value }: { label: string; value: number }) {
   const pct = Math.round(Math.max(0, Math.min(1, value)) * 100);
-  const band = credibilityBand(value);
   return (
     <div>
-      <div className="flex justify-between text-xs mb-1">
-        <span className="text-[var(--ink)]">{label}</span>
-        <span className="tabular-nums text-[var(--muted)]">{pct}%</span>
+      <div className="flex justify-between text-[10px] text-on-surface-variant mb-1">
+        <span>{label}</span>
+        <span className="tabular-nums">{pct}</span>
       </div>
-      <div className="h-2 rounded-full bg-[var(--surface-2)] overflow-hidden">
-        <div
-          className="h-full rounded-full transition-all"
-          style={{ width: `${pct}%`, background: band.color }}
-        />
+      <div className="h-1 bg-surface-variant rounded-full overflow-hidden">
+        <div className="h-full bg-outline" style={{ width: `${pct}%` }} />
       </div>
     </div>
   );

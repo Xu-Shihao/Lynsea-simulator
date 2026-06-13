@@ -40,6 +40,23 @@ export async function createSimulation(
   return (await res.json()) as { sim_id: string };
 }
 
+/**
+ * Cancel an in-flight simulation (SYS-02 / FE-21).
+ * POST {API_BASE}/api/simulate/{sim_id}/cancel. The server then emits an
+ * `error` event on the open SSE stream, which the UI surfaces gracefully.
+ */
+export async function cancelSimulation(simId: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/simulate/${simId}/cancel`, {
+    method: "POST",
+  });
+  if (!res.ok) {
+    const detail = await safeText(res);
+    throw new Error(
+      `Failed to cancel simulation (${res.status})${detail ? `: ${detail}` : ""}`,
+    );
+  }
+}
+
 /** Fetch a complete, already-finished simulation (used for reload). */
 export async function fetchSimulation(simId: string): Promise<SimResult> {
   const res = await fetch(`${API_BASE}/api/simulate/${simId}`);
