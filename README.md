@@ -1,19 +1,38 @@
-# Lynsea-simulator
+# Lynsea — a General Decision Outcome Simulator
 
-Hackathon idea-exploration repo for the **Claude Code Build Day** (Cerebral Valley × Anthropic).
+Project repo for the **Claude Code Build Day** (Cerebral Valley × Anthropic).
 
-This repo holds **10 candidate product plans** — distinct directions seeded from an
-evidence-based life-coaching + simulation/prediction concept — generated in parallel by
-[Multica](https://multica.ai) agents (the *Hackathon Agent*, with the `hackathon-ai-devkit` skills).
+**Chosen build-day direction →** given *any* decision (personal, business, product, policy), Lynsea
+builds a living multi-agent world of the people and forces it touches, fast-forwards that world under
+each option as a **seed-locked counterfactual**, and shows the scored, side-by-side futures plus the
+exact moments and human dynamics that made them diverge. Full write-up in **[`solution/`](solution/)**.
 
-## Layout
+It was selected by exploring **10 candidate directions** up front and combining the two strongest —
+**Plan 01 (Lynsea life-sim sandbox)** + **Plan 03 (Decision Twin)** — into one decision-agnostic engine.
 
-- `docs/HACKATHON_BRIEF.md` — shared grounding: the build-day requirements, judging criteria, constraints, and the seed concept. **Every plan must align to this.**
-- `docs/PLAN_TEMPLATE.md` — the required structure for each plan doc.
-- `plans/` — one markdown doc per candidate idea (`plans/NN-slug.md`), each landed via its own PR.
-- `plans/README.md` — index + status of the 10 candidate ideas.
+## Repository map
 
-## Workflow
+| Path | What's there |
+|------|--------------|
+| **[`solution/`](solution/)** | **The chosen direction** (Plan 01 ⊕ 03) |
+| &nbsp;&nbsp;├ [`README.md`](solution/README.md) | The combined concept and how 01 + 03 merge |
+| &nbsp;&nbsp;├ [`build-plan.md`](solution/build-plan.md) | Product spec, merged architecture + schemas, build-day MVP, 2-min demo, eval, self-score |
+| &nbsp;&nbsp;└ [`research-dossier.md`](solution/research-dossier.md) | Prior art, the decision-/causal-simulation science, evaluation methodology, novelty (cited) |
+| **[`plans/`](plans/)** | The 10 candidate directions explored first — see the [index](plans/README.md) |
+| **[`docs/`](docs/)** | Shared grounding |
+| &nbsp;&nbsp;├ [`HACKATHON_BRIEF.md`](docs/HACKATHON_BRIEF.md) | Build-day requirements, judging criteria, the seed concept |
+| &nbsp;&nbsp;└ [`PLAN_TEMPLATE.md`](docs/PLAN_TEMPLATE.md) | The structure every candidate plan follows |
 
-1. Each idea = one Multica issue → one agent run → one branch `plan/NN-slug` → one PR into `main`.
-2. After all 10 land, score them with `hackathon-idea-scoring` and pick the build-day project.
+## How this repo was built
+
+The 10 candidate plans in [`plans/`](plans/) were generated **in parallel by [Multica](https://multica.ai)
+agents** — one issue → one agent run → one branch → one PR each (the *Hackathon Agent*, carrying the
+`hackathon-ai-devkit` skills). Plans **01** and **03** were then combined into the chosen
+[`solution/`](solution/), with the **Hackathon Agent** authoring the build plan and the **Deep Research
+Agent** authoring the research dossier. Everything here is the consolidated, merged result on `main`.
+
+## Where to start
+
+1. Read **[`solution/README.md`](solution/README.md)** for the concept.
+2. Read **[`solution/build-plan.md`](solution/build-plan.md)** for what to build on the day.
+3. Skim **[`plans/`](plans/README.md)** to see the alternatives that were considered.

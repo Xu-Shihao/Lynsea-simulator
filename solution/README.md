@@ -1,7 +1,8 @@
 # Solution — Lynsea: a General Decision Outcome Simulator
 
-> The chosen build-day direction, formed by **combining Plan 01 (Lynsea life-sim sandbox)** and
-> **Plan 03 (Decision Twin)** into one product for **general decision outcome simulation**.
+> The chosen build-day direction, formed by **combining [Plan 01 — Lynsea life-sim sandbox](../plans/01-life-sim-sandbox.md)**
+> and **[Plan 03 — Decision Twin](../plans/03-decision-twin.md)** into one product for **general decision
+> outcome simulation**. See all candidates in [`../plans/`](../plans/README.md).
 > This folder is filled out by two Multica agents (see "Plan folder layout" below).
 
 ## One-liner
