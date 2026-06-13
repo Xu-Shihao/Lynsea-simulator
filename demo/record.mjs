@@ -1,6 +1,6 @@
 // Lynsea demo — Playwright capture of the self-playing walkthrough.
 //
-// Drives demo/walkthrough.html in a 1280×720 viewport, lets the 60s
+// Drives demo/walkthrough.html in a 1280×720 viewport, lets the ~88s
 // animation run once, and writes a sequence of timestamped PNG frames.
 // Stitching to MP4 (ffmpeg) is OPTIONAL — see demo/README.md. The final
 // submission video can equally be a human screen-capture of the page.
@@ -24,10 +24,10 @@ const PAGE = pathToFileURL(join(__dirname, 'walkthrough.html')).href;
 const OUT = join(__dirname, 'frames');
 
 const SHOTS_ONLY = process.argv.includes('--shots');
-const DURATION_MS = 60_000;
-const FPS = 10;                       // full capture: 10 fps → 600 frames
+const DURATION_MS = 88_000;
+const FPS = 10;                       // full capture: 10 fps → 880 frames
 // Key script beats (seconds) for --shots mode — mirror demo-script.md.
-const BEATS = [4, 9, 13, 20, 27, 33, 40, 46, 52, 59];
+const BEATS = [3, 9, 14, 19, 24, 28, 35, 46, 52, 62, 80];
 
 async function main() {
   await mkdir(OUT, { recursive: true });
