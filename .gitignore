@@ -1,0 +1,31 @@
+# --- secrets / local ---
+.env
+.env.local
+*.local
+.DS_Store
+.claude/
+
+# --- agent scratch worktrees (parallel build) ---
+_work/
+
+# --- python (backend/) ---
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+*.egg-info/
+
+# --- node (frontend/) ---
+node_modules/
+.next/
+out/
+dist/
+npm-debug.log*
+yarn-error.log*
+
+# --- misc ---
+*.log
+.idea/
+.vscode/
