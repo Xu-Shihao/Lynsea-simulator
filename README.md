@@ -5,6 +5,11 @@
 > tough choice and its two options into two month-by-month timelines that differ
 > *only* by the decision — phrased as probabilities, never prophecy.
 
+## 🎥 Demo & links
+
+- **Demo video:** https://www.youtube.com/watch?v=3Za-o85GhiE
+- **GitHub:** https://github.com/Xu-Shihao/Lynsea-simulator
+
 ---
 
 ## What Lynsea is
