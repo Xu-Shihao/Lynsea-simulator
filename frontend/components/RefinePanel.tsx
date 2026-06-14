@@ -133,7 +133,7 @@ export function RefinePanel({
       {/* Initial generate / status */}
       {!plan && (
         <div className="flex flex-col items-start gap-sm">
-          <p className="font-body text-sm text-on-surface-variant max-w-[36rem]">
+          <p className="w-full font-body text-sm text-on-surface-variant max-w-[36rem]">
             Let Lynsea read your decision and suggest the options, the people
             involved, and the factors worth modeling. You can edit everything
             before running — or skip this and run now.

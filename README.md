@@ -5,6 +5,8 @@
 > tough choice and its two options into two month-by-month timelines that differ
 > *only* by the decision — phrased as probabilities, never prophecy.
 
+![Lynsea — Decision Console](docs/assets/console.png)
+
 ## 🎥 Demo & links
 
 - **Demo video:** https://www.youtube.com/watch?v=3Za-o85GhiE
