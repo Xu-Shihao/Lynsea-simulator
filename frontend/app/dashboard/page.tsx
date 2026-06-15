@@ -24,8 +24,10 @@
 import { useEffect, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useSimulation } from '@/lib/useSimulation';
-import type { SimulateRequest, TimelineEventPayload } from '@/lib/contract';
+import type { SimulateRequest } from '@/lib/contract';
 import { Suspense } from 'react';
+import { TimelineColumn } from '@/components/timeline/TimelineColumn';
+import { DimensionalCharts } from '@/components/charts/DimensionalCharts';
 
 // ─── Branch color constants — HARD RULE: A=cyan, B=amber, never swap ─────────
 const BRANCH_A_COLOR = '#22D3EE'; // cyan
@@ -64,37 +66,6 @@ function StreamingPill({ count, status }: { count: number; status: string }) {
     );
   }
   return null;
-}
-
-// ─── Inline event card (placeholder until FE-Dashboard lands timeline component) ──
-function EventCard({ event, branch }: { event: TimelineEventPayload; branch: 'A' | 'B' }) {
-  const color = branch === 'A' ? BRANCH_A_COLOR : BRANCH_B_COLOR;
-  const isShared = event.kind === 'perturbation';
-
-  return (
-    <div
-      className={`rounded-lg p-3 mb-3 relative ${
-        isShared
-          ? 'bg-[#131929] shared-event-card'
-          : 'bg-[#131929]'
-      }`}
-      style={isShared ? undefined : { borderLeft: `2px solid ${color}` }}
-    >
-      {isShared && (
-        <div className="absolute -top-2 left-3 bg-[#1d253a] px-1.5 py-0.5 rounded font-caption text-[10px] text-[#98A2B8] uppercase tracking-wide flex items-center gap-1">
-          ≡ Shared Event
-        </div>
-      )}
-      <p className="font-title text-sm text-[#E6EAF2] mb-1 mt-1">{event.title}</p>
-      <p className="font-caption text-[11px] text-[#98A2B8] leading-relaxed">{event.detail}</p>
-      <div className="flex gap-1 mt-2">
-        <span className="font-caption text-[10px] text-[#5F6B82]">M{event.month}</span>
-        {event.personas.slice(0, 3).map(p => (
-          <span key={p} className="px-1.5 py-0.5 rounded bg-[#1d253a] font-caption text-[10px] text-[#98A2B8]">{p}</span>
-        ))}
-      </div>
-    </div>
-  );
 }
 
 // ─── Error card ──────────────────────────────────────────────────────────────
@@ -229,22 +200,7 @@ function DashboardContent() {
                 <span className="font-caption text-[11px] text-[#98A2B8] truncate">{optionA}</span>
               </div>
 
-              {/* ── TODO: mount point for components/timeline (FE-Dashboard) ── */}
-              {/* <TimelineColumn branch="A" events={eventsByBranch.A} /> */}
-
-              {/* Interim inline event cards until FE-Dashboard lands */}
-              <div>
-                {eventsByBranch.A.length === 0 && (status === 'connecting' || status === 'streaming') && (
-                  <div className="bg-[#131929] border border-[#2A3346] rounded-lg p-4 mb-3 animate-pulse">
-                    <div className="h-3 bg-[#1d253a] rounded w-3/4 mb-2" />
-                    <div className="h-2 bg-[#1d253a] rounded w-full mb-1" />
-                    <div className="h-2 bg-[#1d253a] rounded w-2/3" />
-                  </div>
-                )}
-                {eventsByBranch.A.map(ev => (
-                  <EventCard key={ev.event_id} event={ev} branch="A" />
-                ))}
-              </div>
+              <TimelineColumn branch="A" events={eventsByBranch.A} status={status} />
 
               {/* Branch A score card */}
               {scores.A && (
@@ -278,22 +234,7 @@ function DashboardContent() {
                 <span className="font-caption text-[11px] text-[#98A2B8] truncate">{optionB}</span>
               </div>
 
-              {/* ── TODO: mount point for components/timeline (FE-Dashboard) ── */}
-              {/* <TimelineColumn branch="B" events={eventsByBranch.B} /> */}
-
-              {/* Interim inline event cards until FE-Dashboard lands */}
-              <div>
-                {eventsByBranch.B.length === 0 && (status === 'connecting' || status === 'streaming') && (
-                  <div className="bg-[#131929] border border-[#2A3346] rounded-lg p-4 mb-3 animate-pulse">
-                    <div className="h-3 bg-[#1d253a] rounded w-3/4 mb-2" />
-                    <div className="h-2 bg-[#1d253a] rounded w-full mb-1" />
-                    <div className="h-2 bg-[#1d253a] rounded w-2/3" />
-                  </div>
-                )}
-                {eventsByBranch.B.map(ev => (
-                  <EventCard key={ev.event_id} event={ev} branch="B" />
-                ))}
-              </div>
+              <TimelineColumn branch="B" events={eventsByBranch.B} status={status} />
 
               {/* Branch B score card */}
               {scores.B && (
@@ -316,8 +257,7 @@ function DashboardContent() {
           </div>
         )}
 
-        {/* ── TODO: mount point for components/charts (FE-Dashboard) ── */}
-        {/* <DimensionalCharts metricsByBranch={state.metricsByBranch} /> */}
+        <DimensionalCharts metricsByBranch={state.metricsByBranch} />
 
         {/* ── TODO: mount point for components/forks (FE-Insight) ── */}
         {/* <ForkPoints forks={state.forks} /> */}
