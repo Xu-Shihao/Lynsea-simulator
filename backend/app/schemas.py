@@ -19,7 +19,7 @@ from __future__ import annotations
 
 from typing import Literal, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 # Fixed 5 metric dimensions (api-contract: "Metric dimensions (fixed, 5)").
 Dimension = Literal["economic", "career", "relationships", "mental_health", "autonomy"]
@@ -132,11 +132,22 @@ class Persona(BaseModel):
     cold_start: bool = False
 
     def public(self) -> "PersonaPublic":
+        # ALG-04 / FE-23: surface the bilingual cold-start note in world_ready so
+        # the UI/QA can flag "信息有限 / limited info" personas. personas.py
+        # attaches the note as a live attribute (``cold_start_note``); fall back
+        # to the canonical bilingual string if it isn't present.
+        note: Optional[str] = None
+        if self.cold_start:
+            note = getattr(self, "cold_start_note", None) or (
+                "信息有限，仅供参考 / limited info — built from group defaults"
+            )
         return PersonaPublic(
             id=self.id,
             role=self.role,
             influence_weight=self.influence_weight,
             confidence=self.confidence,
+            cold_start=self.cold_start,
+            note=note,
         )
 
 
@@ -255,6 +266,11 @@ class PersonaPublic(BaseModel):
     role: str
     influence_weight: int
     confidence: Confidence
+    # ALG-04 / FE-23: cold-start personas built from group defaults are flagged
+    # here with a bilingual "信息有限 / limited info" note. Optional + defaulted
+    # so non-cold-start personas and existing contract tests are unaffected.
+    cold_start: bool = False
+    note: Optional[str] = None
 
 
 class OptionsData(BaseModel):
@@ -265,6 +281,21 @@ class OptionsData(BaseModel):
 class WorldReadyData(BaseModel):
     personas: list[PersonaPublic]
     options: OptionsData
+    # ALG-04 / FE-23: top-level bilingual annotation surfaced whenever the world
+    # contains any cold-start persona, so the "信息有限 / limited info" note is a
+    # direct, machine-discoverable string in the world_ready payload (not buried
+    # inside each persona). Auto-derived from the personas; orchestrator does not
+    # need to set it. Stays None (omitted is fine for back-compat) otherwise.
+    note: Optional[str] = None
+
+    @model_validator(mode="after")
+    def _surface_cold_start_note(self) -> "WorldReadyData":
+        if self.note is None and any(p.cold_start for p in self.personas):
+            self.note = next(
+                (p.note for p in self.personas if p.cold_start and p.note),
+                "信息有限，仅供参考 / limited info — built from group defaults",
+            )
+        return self
 
 
 class ErrorData(BaseModel):
