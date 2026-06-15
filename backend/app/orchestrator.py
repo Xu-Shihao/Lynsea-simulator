@@ -28,6 +28,7 @@ import hashlib
 import json
 import logging
 import math
+import os
 import random
 import uuid
 from typing import AsyncIterator, Callable
@@ -551,6 +552,17 @@ recommend = _bind("app.scoring", "recommend", _stub_recommend)
 # --------------------------------------------------------------------------- #
 # Async helpers
 # --------------------------------------------------------------------------- #
+# Streaming pace (real-time feel): env-tunable seconds multiplier.
+# Default 0 = emit as fast as possible (tests/CI stay fast). The dev server
+# sets LYNSEA_PACE=1 so the frontend visibly generates events over a few seconds.
+_PACE = float(os.environ.get("LYNSEA_PACE", "0"))
+
+
+async def _pace(seconds: float) -> None:
+    if _PACE > 0:
+        await asyncio.sleep(seconds * _PACE)
+
+
 async def _maybe_async(fn: Callable, *args):
     """Run a §5 impl, supporting both sync stubs and async specialist impls.
 
@@ -587,6 +599,7 @@ async def simulate_stream(req: SimulateRequest) -> AsyncIterator[bytes]:
             "run_started",
             RunStartedData(run_id=run_id, mode=req.mode, branches=["A", "B"]),
         )
+        await _pace(0.3)
         # MVP proceeds with defaults; emit a non-blocking clarify so the step
         # is observable (SYS-11) and the frontend can optionally render it.
         yield sse_bytes(
@@ -601,6 +614,7 @@ async def simulate_stream(req: SimulateRequest) -> AsyncIterator[bytes]:
                 ],
             ),
         )
+        await _pace(0.25)
 
         # --- S2/S3: world + twins ----------------------------------------- #
         world: World = await _maybe_async(build_world, req, rng)
@@ -615,6 +629,7 @@ async def simulate_stream(req: SimulateRequest) -> AsyncIterator[bytes]:
                 ),
             ),
         )
+        await _pace(0.45)
 
         # --- S4: events (branches in parallel) ---------------------------- #
         events_a, events_b = await asyncio.gather(
@@ -624,8 +639,10 @@ async def simulate_stream(req: SimulateRequest) -> AsyncIterator[bytes]:
         # Skeleton events first, then perturbations (BE-04 streaming order).
         for ev in _ordered(events_a, events_b, "skeleton"):
             yield sse_bytes("timeline_event", ev)
+            await _pace(0.12)
         for ev in _ordered(events_a, events_b, "perturbation"):
             yield sse_bytes("timeline_event", ev)
+            await _pace(0.08)
 
         # --- S4: counterfactual simulation (branches in parallel) --------- #
         sim_a, sim_b = await asyncio.gather(
@@ -634,26 +651,33 @@ async def simulate_stream(req: SimulateRequest) -> AsyncIterator[bytes]:
         )
         for metric in sim_a.metrics:
             yield sse_bytes("metric", metric)
+            await _pace(0.02)
         for metric in sim_b.metrics:
             yield sse_bytes("metric", metric)
+            await _pace(0.02)
 
         # --- S5: analysis ------------------------------------------------- #
         forks = await _maybe_async(detect_forks, sim_a, sim_b)
         for fork in forks:
             yield sse_bytes("fork_point", fork)
+            await _pace(0.18)
 
         score_a, score_b = await asyncio.gather(
             _maybe_async(score_branch, sim_a, world.values),
             _maybe_async(score_branch, sim_b, world.values),
         )
         yield sse_bytes("branch_score", score_a)
+        await _pace(0.2)
         yield sse_bytes("branch_score", score_b)
+        await _pace(0.2)
 
         cred = await _maybe_async(credibility, world, [sim_a, sim_b])
         yield sse_bytes("credibility", cred)
+        await _pace(0.3)
 
         rec = await _maybe_async(recommend, world, [score_a, score_b], forks, cred)
         yield sse_bytes("recommendation", rec)
+        await _pace(0.3)
 
         # --- S6: done ----------------------------------------------------- #
         yield sse_bytes("done", DoneData(run_id=run_id))

@@ -21,7 +21,7 @@
  * DO NOT implement those components here — leave the mount points only.
  */
 
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useSimulation } from '@/lib/useSimulation';
 import type { SimulateRequest } from '@/lib/contract';
@@ -86,13 +86,14 @@ function DashboardContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { state, start, reset } = useSimulation();
-  const startedRef = useRef(false);
 
   const useMock = searchParams.get('mock') === '1';
 
   useEffect(() => {
-    if (startedRef.current) return;
-    startedRef.current = true;
+    // StrictMode-safe: start() aborts any prior stream and the cleanup aborts on
+    // unmount, so re-running on StrictMode's remount is correct. (A persisted
+    // `startedRef` guard here previously blocked that remount, leaving the only
+    // stream aborted and the UI stuck at "Connecting…".)
 
     // Load the SimulateRequest from session storage (set by Console page)
     let req: SimulateRequest | null = null;
