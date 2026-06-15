@@ -174,12 +174,16 @@ def test_alg03_personas_validate_against_schema(full_request):
         assert 0 <= revalidated.influence_weight <= 10
         assert revalidated.confidence in ("high", "low")
         # public() view must expose exactly the world_ready subset.
+        # ALG-04 / FE-23: PersonaPublic now also carries the optional, back-
+        # compatible cold-start flag + bilingual "信息有限 / limited info" note.
         pub = p.public()
         assert pub.model_dump().keys() == {
             "id",
             "role",
             "influence_weight",
             "confidence",
+            "cold_start",
+            "note",
         }
 
 
