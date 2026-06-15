@@ -48,6 +48,12 @@ _NEUTRAL = 50.0  # score for a dimension with no metric data (no opinion)
 # Below this weighted-total gap the two branches are "too close to call".
 _LEAN_THRESHOLD = 3.0
 
+# When overall credibility sits below this cutoff (cold-start / thin evidence),
+# the system must NOT confidently pick a branch — it abstains to "neither"
+# regardless of the score gap (ALG-42 / SYS-14). Tuned so a cold-start run
+# (cred.overall < 65) abstains while normal runs keep their confident lean.
+_LOW_CRED_NEITHER = 65
+
 # A secondary fork must clear this fraction of the strongest fork's divergence
 # to be worth surfacing (keeps the list to genuine turning points).
 _SECONDARY_FORK_RATIO = 0.6
@@ -366,7 +372,10 @@ def recommend(
     diff = b_total - a_total
     gap = abs(diff)
 
-    if gap < _LEAN_THRESHOLD:
+    # With thin / cold-start evidence the system must abstain rather than
+    # confidently separate the paths (ALG-42 / SYS-14).
+    low_cred = cred.overall < _LOW_CRED_NEITHER
+    if low_cred or gap < _LEAN_THRESHOLD:
         leaning: str = "neither"
     elif diff > 0:
         leaning = "B"
@@ -377,7 +386,18 @@ def recommend(
     label_a = world.options.get("A", "Option A")
     label_b = world.options.get("B", "Option B")
 
-    if leaning == "neither":
+    if leaning == "neither" and low_cred and gap >= _LEAN_THRESHOLD:
+        # Abstaining because the evidence is too thin to trust the gap (SYS-15:
+        # probabilistic, no "will / definitely").
+        rationale = (
+            f"The data here is too limited to confidently separate the paths "
+            f"(overall confidence around {cred.overall}%). The weighted totals come "
+            f"out near {a_total:.0f}/100 for '{label_a}' and {b_total:.0f}/100 for "
+            f"'{label_b}', but with this little to go on that spread could easily "
+            "shift either way — so I'd hold off on leaning toward either option and "
+            "gather a bit more before reading much into the difference."
+        )
+    elif leaning == "neither":
         rationale = (
             "Weighted against what matters most to you, the two paths look close — "
             f"around {a_total:.0f}/100 for '{label_a}' versus {b_total:.0f}/100 for "
